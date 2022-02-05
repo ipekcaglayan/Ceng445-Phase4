@@ -1,0 +1,391 @@
+{% extends 'index.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/my_profile.css' %}?v1.2">
+{#    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>#}
+    <title>{{ user.username }}'s Photos</title>
+
+{% endblock %}
+
+
+
+
+{% block content %}
+
+        <li class="selected">
+
+                    <div class="cd-full-width">
+                        <div class="container-fluid js-tm-page-content" data-page-no="1" data-page-type="gallery">
+                            <div class="tm-img-gallery-container">
+
+
+                                <br> <br>
+
+
+                                <div class="tm-img-gallery gallery-one">
+                                <!-- Gallery One pop up connected with JS code below -->
+                                    <div class="tm-img-gallery-info-container">
+                                        <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058;" data-bs-toggle="modal" data-bs-target="#uploadPhoto" type="button" class="btn btn-lg">
+                                            <i class="fas fa-upload">  </i> Upload Photo
+                                        </button>
+                                    </div>
+
+
+                                    {% for photo in photos %}
+
+                                        <div class="grid-item">
+                                            <figure class="effect-bubba">
+                                                <img class="img-fluid tm-img cover" src="{{ photo.photo.url }}" alt="Image"  style="height:300px; width:300px;">
+                                                <figcaption>
+
+                                                <p class="tm-figure-description">Location: {{ photo.location }}</p>
+                                                  <p class="tm-figure-description">Date: {{ photo.date}}</p>
+                                                  <p class="tm-figure-description">Tags: {{ photo.tags }} </p>
+                                                <a class="tm-figure-description" href="{{ photo.photo.url }}"> <i class="fas fa-photo-video "></i> </a>
+
+                                            </figcaption>
+                                            </figure>
+                                            <div class="row text-md-center" style="width: 50%; margin-left: 75px" >
+                                                <div class="col">
+                                                    <button  onclick="loadModal({{ photo.id }},'{{ photo.location }}', '{{ photo.date }}', {{ photo.tags }});" type="button" style="border: none; display: inline-block; background: transparent" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                                    <i  class="fas fa-edit"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="col">
+                                                    <button onclick="deletePhoto({{ photo.id  }})" type="button"  style="border: none; display: inline-block; background: transparent "data-bs-toggle="modal" data-bs-target="#deletePhoto">
+                                                        <i  class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+
+                                                <div class="col">
+                                                    <button onclick="addPhotoToCollection({{ photo.id  }})" type="button"  style="border: none; display: inline-block; background: transparent "data-bs-toggle="modal " data-bs-target="#addToCollection">
+                                                        <i  class="fas fa-folder-plus"></i>
+                                                    </button>
+                                                </div>
+
+
+
+{##}
+
+                                        </div>
+
+                                        </div>
+
+                                    {% endfor %}
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title" id="exampleModalLabel">Photo Detail</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+            <div class="modal-body">
+                <small style="color: #989696">&#8226; Use <b style="color: #181818"> hyphen (-)</b> for the fields you want to left empty, or the fields you want to remove filter</small>  <br>
+                <small style="color: #989696">&#8226; Use <b style="color: #181818">yyyy-mm-dd</b> format for date fields.</small>
+                <form action="{% url 'shared_photo_library:update_photo' %}" method="post" enctype="multipart/form-data">
+                  {% csrf_token %}
+                    <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" class="form-control" name="location" id="location" value="">
+                    <label for="date">Date</label>
+                    <input type="text" class="form-control" name="date" id="date" value="">
+
+                    <label for="date">Tags
+                        <button id="edit" onclick="editTags()" type="button" style="border: none; background: transparent; display: inline-block">
+                                <i style="margin-left: 10px" class="fas fa-edit"></i>
+                            </button>
+                        <button id="check" onclick="getTags()" type="button" style="border: none; background: transparent; display: none">
+                                <i style="margin-left: 10px" class="fas fa-check"></i></button>
+                        <button id="add" onclick="addTag(this)" type="button" style="border: none; background: transparent; display: none">
+                                <i style="margin-left: 10px" class="fas fa-plus"></i></button>
+                    </label>
+                    <div id="tag-list" style="display:none;">
+                    </div>
+                    <div style="display: block" id="show-tags">
+                        <input class="form-control"  type="text" id="show-all-tags" value="" readonly>
+                    </div>
+
+                    <input type="hidden" name="id" id="id" value="">
+                  </div>
+                    <input  id="tags-list" name="tags-list" type="hidden" value="">
+                 <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-dark btn-lg">Save changes</button>
+                  </div>
+                </form>
+
+            </div>
+
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="deletePhoto" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 style="font-size: 28px" class="modal-title" id="exampleModalLabel">Are you sure?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <br>
+        Are you sure you want to delete the photo. This action cannot be undone.
+        <form action="{% url 'shared_photo_library:update_photo' %}" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+            <input type="hidden" name="id" id="delete_photo_id" value="">
+            <input type="hidden" name="delete" id="id" value="true">
+            <br>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light btn-lg" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-dark btn-lg">Delete</button>
+          </div>
+
+        </form>
+
+      </div>
+
+
+    </div>
+  </div>
+</div>
+    <div class="modal fade" id="addToCollection" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 style="font-size: 28px" class="modal-title" id="exampleModalLabel">Add to Collection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <h3>Select collections that you want to add this picture to.</h3>
+                  <br>
+                    <div class="p-1 border bg-warning">Your Collections</div>
+                  <br>
+                  {% for user_col in users_collections %}
+
+                      <div class="form-check">
+                          <input onchange="checkChanged({{ user_col.id }})" class="form-check-input" type="checkbox" value="" id="check-{{ user_col.id }}">
+                          <label class="form-check-label" for="flexCheckDefault">
+                              {{ user_col.collection_name }}
+                          </label>
+                        </div>
+                  {%  endfor %}
+                  <br>
+                  <div class="p-1 border bg-warning">Collections Shared With You</div>
+                  <br>
+                    {% for shared_col in shared_collections %}
+                      <div class="form-check">
+                          <input onchange="checkChanged({{ shared_col.id }})" class="form-check-input" type="checkbox" value="" id="check-{{ shared_col.id }}">
+                          <label class="form-check-label" for="flexCheckDefault">
+                              {{ shared_col.collection_name }}
+                          </label>
+                        </div>
+                    {%  endfor %}
+
+
+                    <form action="{% url 'shared_photo_library:update_photo' %}" method="post" enctype="multipart/form-data">
+                      {% csrf_token %}
+                        <input type="hidden" name="id" id="photo_id" value="upsi">
+                        <input type="hidden" name="collections" id="collections" value="">
+
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Cancel</button>
+                        <button  type="submit" class="btn btn-dark btn-lg">Add</button>
+                      </div>
+
+                    </form>
+              </div>
+
+
+            </div>
+          </div>
+</div>
+    <div class="modal fade" id="uploadPhoto" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Upload Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                  <form action="{% url 'shared_photo_library:upload_photo' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form|crispy}}
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button  type="submit" class="btn btn-dark">Upload</button>
+                      </div>
+                  </form>
+
+              </div>
+
+
+            </div>
+          </div>
+</div>
+
+<script>
+
+function loadModal(ph_id, ph_loc, ph_date, ph_tags){
+    let id = document.getElementById('id');
+    let loc = document.getElementById('location');
+    let date = document.getElementById('date');
+    let tags = document.getElementById('show-all-tags');
+    document.getElementById('tags-list').value = ph_tags;
+
+
+
+    loc.value = ph_loc;
+    if(ph_date == 'None'){
+        date.value = "-";
+
+    }
+    else{
+        date.value = ph_date;
+
+    }
+    tags.value = ph_tags;
+    id.value = ph_id;
+    photo_id.value = ph_id;
+    let tagList = document.getElementById('tag-list')
+    console.log(ph_tags)
+    for(let i in ph_tags){
+        let newNode = document.createElement('div');
+        let tag = "<div style='margin-bottom: 5px' class='input-group'><input type='text' class='form-control' name='tags' id='tags' value="+ph_tags[i]+"><div class='input-group-append'><span style='background: none; border: none' class='input-group-text'><a onclick='removeTag(this)' > <i style='margin-left: 10px; margin-top: 10px' class='fas fa-times fa-2x'></i> </a></span> </div> </div>"
+        newNode.innerHTML = tag;
+        tagList.append(newNode)
+
+
+    }
+    $('#exampleModal').modal('show')
+
+}
+function removeTag(element){
+    let tagRow = element.parentNode.parentNode.parentNode;
+    tagRow.remove()
+}
+
+function addTag(element){
+    let editTags = document.getElementById('tag-list');
+    let newNode = document.createElement('div');
+    let tag = "<div style='margin-bottom: 5px' class='input-group'><input type='text' class='form-control' name='tags' id='tags' value=''><div class='input-group-append'><span style='background: none; border: none' class='input-group-text'><a onclick='removeTag(this)' > <i style='margin-left: 10px; margin-top: 10px' class='fas fa-times fa-2x'></i> </a></span> </div> </div>"
+    newNode.innerHTML = tag;
+    editTags.append(newNode)
+    {#console.log(tagsDiv)#}
+
+    {#tagsDiv.innerHtml += tag#}
+}
+function getTags(){
+    let tags = [];
+    $("input[name='tags']").each(function() {
+        tags.push($(this).val());
+    });
+    let loc = document.getElementById('location');
+    console.log("loc: ", loc.value)
+    let date = document.getElementById('date');
+    console.log("date: ", date.value)
+    let tagsList = document.getElementById('tags-list')
+    tagsList.value = tags.join()
+    console.log(tagsList.value)
+    let tagEdit = document.getElementById('tag-list')
+    tagEdit.hidden=false
+    let allTags = document.getElementById('show-all-tags');
+    allTags.value = tags
+    let showTagsDiv = document.getElementById('show-tags');
+    showTagsDiv.style.display='block'
+
+    let editButton = document.getElementById('edit');
+    let checkButton = document.getElementById('check');
+    let addButton = document.getElementById('add');
+    let editTags = document.getElementById('tag-list');
+
+    editButton.style.display = "inline-block";
+    checkButton.style.display = "none";
+    addButton.style.display = "none";
+    editTags.style.display='none'
+
+
+
+
+}
+
+function editTags(){
+    let editButton = document.getElementById('edit');
+    let checkButton = document.getElementById('check');
+    let addButton = document.getElementById('add');
+    let showTagsDiv = document.getElementById('show-tags');
+    let editTags = document.getElementById('tag-list');
+
+    editButton.style.display = "none";
+    checkButton.style.display = "inline-block";
+    addButton.style.display = "inline-block";
+    showTagsDiv.style.display = "none";
+    editTags.style.display='block'
+
+
+
+}
+
+function deletePhoto(ph_id){
+    let id = document.getElementById('delete_photo_id');
+    id.value = ph_id;
+}
+
+function checkChanged(id){
+    id=id.toString();
+    let ids = [];
+    let selectedCollections = document.getElementById('collections');
+    ids = selectedCollections.value.split(',')
+    const index = ids.indexOf(id);
+    if (index > -1) {
+        ids.splice(index, 1);
+    }
+    else{
+        ids.push(id)
+    }
+    selectedCollections.value = ids.join()
+    console.log(selectedCollections);
+}
+
+function addPhotoToCollection(id){
+    {#console.log(id, "Add photo to collection")#}
+    let ph_id = document.getElementById('photo_id');
+    ph_id.value = id;
+    $('#addToCollection').modal('show')
+}
+
+
+
+let modal = document.getElementById('exampleModal')
+modal.addEventListener('hidden.bs.modal', function (event) {
+        let tagList = document.getElementById('tag-list');
+        tagList.innerHTML="";
+        let showTagsDiv = document.getElementById('show-tags');
+        showTagsDiv.style.display='block'
+
+        let editButton = document.getElementById('edit');
+        let checkButton = document.getElementById('check');
+        let addButton = document.getElementById('add');
+        let editTags = document.getElementById('tag-list');
+
+        editButton.style.display = "inline-block";
+        checkButton.style.display = "none";
+        addButton.style.display = "none";
+        editTags.style.display='none'
+})
+
+</script>
+
+    {% endblock %}
+
+
+
+
+

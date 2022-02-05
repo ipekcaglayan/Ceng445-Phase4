@@ -1,0 +1,34 @@
+{% extends 'index.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/my_profile.css' %}?v1.2">
+{#    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>#}
+    <title>Homepage</title>
+
+{% endblock %}
+
+
+{% block content %}
+    <li class="selected">
+        <div class="cd-full-width">
+            <div class="container-fluid js-tm-page-content" data-page-no="1" data-page-type="gallery">
+                <br><br><br>
+                <div class="container">
+                        <form action="{% url 'shared_photo_library:signup' %}" style="margin: 0 auto; width: 300px" method="post" >
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <Button   style="margin-top: 5px; " class="btn btn-dark btn-lg" type="submit">Register</Button>
+                            <br>
+
+                    </form>
+
+
+                </div>
+            </div>
+        </div>
+    </li>
+
+
+{% endblock %}

@@ -1,0 +1,288 @@
+{% extends 'index.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/my_profile.css' %}?v1.2">
+{#    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>#}
+    <title>{{view.view_name}}</title>
+
+{% endblock %}
+
+
+
+
+{% block content %}
+
+    <li class="selected">
+        <div class="cd-full-width">
+            <div class="container-fluid js-tm-page-content" data-page-no="1" data-page-type="gallery">
+                <div class="tm-img-gallery-container">
+                    <br> <br>
+
+                    <div class="tm-img-gallery gallery-one">
+                    <!-- Gallery One pop up connected with JS code below -->
+                        <small style="font-size: 32px; color:#5b1591"><b>{{ view.view_name }} </b></small> <br>
+                        <small style="color: #686659">created by <i>{{ view.owner.username }}</i> | {{ view.created_date }} </small>
+                        <br> <br>
+                        <div class="tm-img-gallery-info-container">
+                            {% if view.owner.id == user.id %}
+                                {% if view.collection.owner.id == user.id %}
+                                    <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058;" type="button" class="btn btn-lg" data-bs-toggle="modal" data-bs-target="#shareWithUser"><i class="fas fa-share"></i> Share View</button>
+                                {% endif %}
+                                <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058;" onclick="openSetFilterModal('{{ view.tags }}', '{{ view.start_time }}', '{{ view.end_time }}', '{{ view.conjunctive }}')" type="button" class="btn btn-lg" >Set Filters</button>
+                            {% endif %}
+                        </div>
+
+
+                        {% for photo in photos %}
+
+                            <div class="grid-item">
+                                <figure class="effect-bubba">
+                                    <img class="img-fluid tm-img cover" src="{{ photo.photo.url }}" alt="Image"  style="height:300px; width:300px;">
+                                    <figcaption>
+
+                                    <p class="tm-figure-description">Location: {{ photo.location }}</p>
+                                      <p class="tm-figure-description">Date: {{ photo.date}}</p>
+                                      <p class="tm-figure-description">Tags: {{ photo.tags }} </p>
+                                    <a class="tm-figure-description" href="{{ photo.photo.url }}"> <i class="fas fa-photo-video "></i> </a>
+
+                                    </figcaption>
+                                </figure>
+
+                            </div>
+
+
+                        {% endfor %}
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+
+    <div class="modal fade" id="shareWithUser" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Share View</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+             <div class="modal-body">
+              <div class="p-1 border bg-warning">View Shared With</div>
+              <br>
+              <div class="row">
+                  {% if shared_users %}
+                      {% for username, user in shared_users.items %}
+                          <div class="col-md-3">
+                            <div class="p-1 border" style="background-color: #cbc7c7"><i onclick="unshareWith({{ user.id }})" class="fas fa-user-minus"></i><b style="color: #262424; margin-left: 5px"> {{ username}}</b></div>
+                          </div>
+                      {% endfor %}
+
+                  {% else %}
+                      <p>This collection not shared with anyone.</p>
+                  {% endif %}
+
+              </div>
+              <br>
+              <form id="shareForm" action="{% url 'shared_photo_library:view_detail' id=view.id %}"  action="" method="post" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <div class="mb-3">
+                    <label for="username" class="form-label">User's username that you want to share this collection with:</label>
+                    <input type="text" class="form-control" name="share-with" id="username" aria-describedby="emailHelp">
+                    <div style="display: none" id="userWarning" class="form-text">heyyoo</div>
+                  </div>
+                  <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button onclick="shareWith({{ not_shared_users }})" type="button" class="btn btn-dark">Share</button>
+                  </div>
+              </form>
+              <form id="unshareForm" action="{% url 'shared_photo_library:view_detail' id=view.id %}" method="post" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <input type="hidden" value="" name="unshare-with" id="unshareWith">
+              </form>
+
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="setFilters" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 style="font-size: 32px" class="modal-title" id="exampleModalLabel">Set Filters</h5>
+
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+               <small style="color: #989696">&#8226; Use <b style="color: #181818"> hyphen (-)</b> for the fields you want to left empty, or the fields you want to remove filter</small>  <br>
+                <small style="color: #989696">&#8226; Use <b style="color: #181818">yyyy-mm-dd</b> format for date fields.</small>
+                <br><br>
+                <form id="setFilterForm" action="{% url 'shared_photo_library:view_detail' id=view.id %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <label for="view_name" class="form-label">View Name:</label>
+                    <input type="text" class="form-control" name="view_name" id="view_name" value="{{ view.view_name }}">
+
+                    <label for="location_rect" class="form-label">Location:</label>
+                    <input type="text" class="form-control" name="location_rect" id="location_rect" value="{{ view.location_rect }}">
+
+                    <label for="start_time" class="form-label">Start time:</label>
+                    <input type="text" class="form-control" name="start_time" id="start_time" value="{{ view.start_time }}">
+                    <label for="end_time" class="form-label">End time:</label>
+                    <input type="text" class="form-control" name="end_time" id="end_time" value="{{ view.end_time }}">
+                    <input type="hidden" name="filter-tags" id="filterTags" value="{{ view.tags }}"/>
+                    <input type="hidden" name="conj" id="conj" value=""/>
+
+                </form>
+                <br>
+
+                <p class="p-1 border bg-warning">Select filter tags</p>
+                <div class="row">
+                {% for filter_tag in filter_tags %}
+                    <div class="col-md-3">
+                        <div class="form-check">
+                          <input onchange="filterCheckChanged('{{ filter_tag }}')" class="form-check-input" type="checkbox" value="" id="{{ filter_tag }}">
+                          <label class="form-check-label" for="flexCheckDefault">
+                              {{ filter_tag }}
+                          </label>
+                        </div>
+                    </div>
+                {% endfor %}
+
+            </div>
+                <br>
+                <p class="p-1 border bg-warning">Filter tags in ... form: </p>
+
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1">
+                  <label class="form-check-label" for="inlineRadio1">Conjunctive</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2" value="option2">
+                  <label class="form-check-label" for="inlineRadio2">Disjunctive</label>
+                </div>
+
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Cancel</button>
+                <button onclick="setFilter()" type="button" class="btn btn-dark btn-lg" >Set Filters</button>
+            </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script>
+
+
+
+function unshareWith(user_id){
+    {#console.log(user_id)#}
+    let unshare = document.getElementById('unshareWith');
+    unshare.value = user_id;
+    document.getElementById('unshareForm').submit();
+}
+
+function shareWith(not_shared_users){
+    console.log(not_shared_users)
+    let share = document.getElementById('username')
+    let username = share.value
+    const index = not_shared_users.indexOf(username);
+    if (index > -1) {
+        document.getElementById('shareForm').submit();
+    }
+    else{
+        let warning = document.getElementById("userWarning")
+        warning.innerHTML = "No users found."
+        warning.style.display = "block"
+    }
+
+}
+
+function filterCheckChanged(tag){
+    let tags = [];
+    let filterTags = document.getElementById('filterTags');
+    tags = filterTags.value.split(',')
+    const index = tags.indexOf(tag);
+    if (index > -1) {
+        tags.splice(index, 1);
+    }
+    else{
+        tags.push(tag)
+    }
+    filterTags.value = tags.join()
+    console.log(filterTags.value);
+}
+
+function openSetFilterModal(tags, start_time, end_time, conj){
+    console.log(tags)
+    if(start_time==="None"){
+        document.getElementById("start_time").value = "-"
+    }
+    if(end_time==="None"){
+        document.getElementById("end_time").value = "-"
+    }
+
+    if(tags !== ""){
+        let filterTags = document.getElementById('filterTags').value.split(",");
+        for(let i in filterTags){
+        console.log(filterTags[i]);
+        if(filterTags[i] !==""){
+            document.getElementById(filterTags[i]).checked = true
+        }
+    }
+    }
+    else{
+        document.getElementById('filterTags').value = ""
+    }
+
+
+    if(conj==="True"){
+        document.getElementById("inlineRadio1").checked = true
+    }
+    else{
+        document.getElementById("inlineRadio2").checked = true
+
+    }
+
+
+
+    $('#setFilters').modal('show')
+}
+
+function setFilter(){
+    if(document.getElementById("inlineRadio1").checked){
+        document.getElementById("conj").value = "true"
+    }
+    else{
+        document.getElementById("conj").value = "false"
+    }
+    document.getElementById("setFilterForm").submit()
+}
+
+
+let shareModal = document.getElementById('shareWithUser')
+shareModal.addEventListener('hidden.bs.modal', function (event) {
+    let share = document.getElementById('username');
+    share.value = "";
+    let warning = document.getElementById("userWarning")
+    warning.style.display = "none"
+
+
+})
+
+
+
+</script>
+
+{% endblock %}
+
+
+
+
+

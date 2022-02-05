@@ -1,0 +1,46 @@
+{% extends 'index.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/my_profile.css' %}?v1.2">
+{#    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>#}
+    <title>{{ user.username }}'s Views</title>
+
+{% endblock %}
+
+
+{% block content %}
+    <li class="selected">
+        <div class="cd-full-width">
+            <div class="container-fluid js-tm-page-content" data-page-no="1" data-page-type="gallery">
+                <br><br><br>
+                <div class="container">
+                    <div class="row">
+                            {% for view in views %}
+                                <div class="grid-item">
+                                    <figure class="effect-bubba">
+                                        <img class="img-fluid tm-img cover" src="{{ view.cover.url }}" alt="Image"  style="height:300px; width:300px;">
+                                        <figcaption>
+
+                                        <h3 style="background-color: #cdcadd; width: 300px; padding-bottom: 10px; padding-top: 10px" class="tm-figure-title" ><span>{{ view.view_name }}</span></h3>
+                                          <p class="tm-figure-description">created by <i>{{ view.owner }}</i></p>
+                                          <p class="tm-figure-description"> <i>{{ view.created_date }}</i> </p>
+                                          <p class="tm-figure-description"> <i>({{ view.photo_number }})</i> </p>
+                                        <a class="tm-figure-description" href="{% url 'shared_photo_library:view_detail' id=view.id %}"></a>
+
+                                    </figcaption>
+                                    </figure>
+
+                                </div>
+
+
+                            {%endfor  %}
+                        </div>
+                </div>
+            </div>
+        </div>
+    </li>
+
+
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends 'index.html' %}
+
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/my_profile.css' %}?v1.3">
+{#    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>#}
+    <title>Homepage</title>
+
+{% endblock %}
+
+
+{% block content %}
+    <li class="selected">
+        <div class="cd-full-width">
+            <div class="container-fluid js-tm-page-content tm-page-pad" data-page-no="5" data-page-type="gallery">
+                <br><br><br>
+                <div class="container">
+                    {% if user_authenticated %}
+                        {% if photos %}
+                            <div style="margin-bottom: 25px" class="row">
+                                <h3 style="font-size: 32px; margin-bottom: 8px"><a href="{% url 'shared_photo_library:photos' %}">Photos</a></h3>
+                                {% for photo in photos %}
+
+                                    <div class="col-md-3">
+                                        <div class="flip-card">
+                                      <div class="flip-card-inner">
+                                        <div class="flip-card-front">
+                                          <img class="cover" src="{{ photo.photo.url }}" alt="Avatar" style="height:300px; width:300px;">
+                                        </div>
+                                        <div class="flip-card-back">
+                                          <p style="margin-top:100px">Location: {{ photo.location }}</p>
+                                          <p>Date: {{ photo.date}}</p>
+                                          <p>Tags: {{ photo.tags }} </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    </div>
+
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% if collections %}
+                            <div class="row">
+                            <h3 style="font-size:32px; margin-bottom: 8px "><a href="{% url 'shared_photo_library:collections' %}">Collections</a></h3>
+                            {% for col in collections %}
+
+                                <div class="col-md-3">
+                                    <div class="flip-card">
+                                  <div class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                      <img class="cover" src="{{ col.cover.url }}" alt="Avatar" style="height:300px; width:300px;">
+                                    </div>
+                                    <div class="flip-card-back">
+                                      <h3 style="margin-top:100px">{{ col.collection_name }}</h3>
+                                      <p> created by <i>{{ col.owner.username}}</i></p>
+                                      <p>{{ col.created_date }} </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+                        {% endif %}
+
+                        {% if views %}
+                            <div class="row">
+                            <h3 style="font-size:32px; margin-bottom: 8px "><a href="{% url 'shared_photo_library:views' %}">Views</a></h3>
+                            {% for view in views %}
+
+                                <div class="col-md-3">
+                                    <div class="flip-card">
+                                  <div class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                      <img class="cover" src="{{ view.cover.url }}" alt="Avatar" style="height:300px; width:300px;">
+                                    </div>
+                                    <div class="flip-card-back">
+                                      <h3 style="margin-top:100px">{{ view.view_name }}</h3>
+                                      <p> created by <i>{{ view.owner.username}}</i></p>
+                                      <p>{{ view.created_date }} </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                </div>
+
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+
+                    {% else %}
+                        <form action="{% url 'shared_photo_library:login' %}" class="login" method="post" >
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <Button   style="margin-top: 5px; " class="btn btn-dark btn-lg" type="submit">Login</Button>
+                            <br>
+                        <small style="margin-top: 5px">Don't have an account? <a href="{% url 'shared_photo_library:signup' %}"><i class="fas fa-user-plus"></i></a> </small>
+
+                    </form>
+                    {% endif %}
+
+
+                </div>
+            </div>
+        </div>
+    </li>
+
+
+{% endblock %}

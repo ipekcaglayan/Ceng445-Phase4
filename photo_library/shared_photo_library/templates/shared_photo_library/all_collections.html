@@ -1,0 +1,75 @@
+{% extends 'index.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/my_profile.css' %}?v1.2">
+{#    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>#}
+    <title>{{ user.username }}'s Collections</title>
+
+{% endblock %}
+
+
+{% block content %}
+    <li class="selected">
+        <div class="cd-full-width">
+            <div class="container-fluid js-tm-page-content" data-page-no="1" data-page-type="gallery">
+
+                <br><br><br>
+
+                <div class="container">
+                    <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058;" data-bs-toggle="modal" data-bs-target="#createCollection" type="button" class="btn btn-lg">
+                        <i class="fas fa-plus">  </i> Create Collection
+                    </button>
+                    <br><br>
+                    <div class="row">
+                        {% for col in collections %}
+                            <div class="grid-item">
+                                <figure class="effect-bubba">
+                                    <img class="img-fluid tm-img cover" src="{{ col.cover.url }}" alt="Image"  style="height:300px; width:300px;">
+                                    <figcaption>
+
+                                    <h3 style="background-color: #cdcadd; width: 300px; padding-bottom: 10px; padding-top: 10px" class="tm-figure-title" ><span>{{ col.collection_name }}</span></h3>
+                                      <p class="tm-figure-description">created by <i>{{ col.owner }}</i></p>
+                                      <p class="tm-figure-description"> <i>{{ col.created_date }}</i> </p>
+                                      <p class="tm-figure-description"> <i>({{ col.photo_number }})</i> </p>
+                                    <a class="tm-figure-description" href="{% url 'shared_photo_library:collection_detail' id=col.id %}"></a>
+
+                                </figcaption>
+                                </figure>
+
+                            </div>
+                        {%endfor  %}
+                     </div>
+                </div>
+
+{#                <a href="{% url 'shared_photo_library:collection_detail' id=4 %}">collection</a>#}
+
+            </div>
+        </div>
+    </li>
+
+        <div class="modal fade" id="createCollection" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 style="font-size: 28px" class="modal-title" id="exampleModalLabel">Create a Collection</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <form action="{% url 'shared_photo_library:collections' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form|crispy}}
+                  <br>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-dark btn-lg">Create</button>
+          </div>
+              </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+{% endblock %}

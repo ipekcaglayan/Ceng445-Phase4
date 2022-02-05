@@ -1,0 +1,597 @@
+{% extends 'index.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/my_profile.css' %}?v1.2">
+{#    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>#}
+    <title>{{col.collection_name}}</title>
+
+{% endblock %}
+
+
+
+
+{% block content %}
+
+    <li class="selected">
+        <div class="cd-full-width">
+            <div class="container-fluid js-tm-page-content" data-page-no="1" data-page-type="gallery">
+                <div class="tm-img-gallery-container">
+                    <br> <br>
+
+                    <div class="tm-img-gallery gallery-one">
+                    <!-- Gallery One pop up connected with JS code below -->
+                        <small style="font-size: 32px; color:#5b1591"><b>{{ col.collection_name }} </b></small> <br>
+                        <small style="color: #686659">created by <i>{{ col.owner.username }}</i> | {{ col.created_date }} </small>
+                        <br> <br>
+                        <div class="tm-img-gallery-info-container">
+                            <div >
+                                <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058;" type="button" class="btn btn-lg" data-bs-toggle="modal" data-bs-target="#addPhotoToCollection">
+                                    <i class="fas fa-plus"></i> Add Photo
+                                </button>
+
+                                <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058;" type="button" class="btn btn-lg" data-bs-toggle="modal" data-bs-target="#shareWithUser"><i class="fas fa-share"></i> Share Collection</button>
+                                <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058;" type="button" class="btn btn-lg" data-bs-toggle="modal" data-bs-target="#createView"><i class="fas fa-filter"></i> Create View</button>
+
+                            </div>
+                            <br>
+                            <div >
+                                <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058; display: inline-block" onclick="selectToRemove(this)" type="button" class="btn btn-lg"><i class="fas fa-hand-pointer"></i> Select</button>
+                                <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058; display: none" id="removeSelectedButton" onclick="removeSelectedPhotos()" type="button" class="btn btn-lg"> <i class="fas fa-minus"></i> Remove Selected Photos</button>
+
+                            </div>
+
+                        </div>
+
+
+                        {% for photo in photos %}
+
+                            <div class="grid-item">
+                                <figure class="effect-bubba">
+                                    <img class="img-fluid tm-img cover" src="{{ photo.photo.url }}" alt="Image"  style="height:300px; width:300px;">
+                                    <figcaption>
+
+                                    <p class="tm-figure-description">Location: {{ photo.location }}</p>
+                                      <p class="tm-figure-description">Date: {{ photo.date}}</p>
+                                      <p class="tm-figure-description">Tags: {{ photo.tags }} </p>
+                                    <a class="tm-figure-description" href="{{ photo.photo.url }}"> <i class="fas fa-photo-video "></i> </a>
+
+                                </figcaption>
+                                </figure>
+                                <div class="row text-md-center" style="width: 100px; margin-left: 100px" >
+                                    <div class="col">
+                                        <button  onclick="loadModal('{{ photo.id }}','{{ photo.location }}', '{{ photo.date }}', {{ photo.tags }});" type="button" style="border: none; display: inline-block; background: transparent" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                        <i  class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                    <div class="col">
+                                        <form action="{%  url 'shared_photo_library:collection_detail' id=col.id %}" method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="photo_id" value="{{ photo.id }}">
+                                            <input type="hidden" name="remove" value="true">
+                                            <button type="submit" style="border: none; display: inline-block; background: transparent">
+                                            <i class="fas fa-folder-minus"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+
+
+
+{##}
+
+                            </div>
+                                <div class="row text-md-center">
+                                    <div  class="form-check remove-selected" style="margin-left: 150px; margin-top: 10px; display: none">
+                                      <input onchange="removeCheckChanged({{ photo.id }})"  style="width: 20px; height: 20px" class="form-check-input" type="checkbox" value="" id="check-{{ photo.id }}">
+                                  </div>
+                                </div>
+
+
+                            </div>
+
+
+                        {% endfor %}
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title" id="exampleModalLabel">Photo Detail</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+            <div class="modal-body"><br>
+                <small style="color: #989696">&#8226; Use <b style="color: #181818"> hyphen (-)</b> for the fields you want to left empty, or the fields you want to remove filter</small>  <br>
+                <small style="color: #989696">&#8226; Use <b style="color: #181818">yyyy-mm-dd</b> format for date fields.</small>
+                <br><br>
+                <form action="{% url 'shared_photo_library:update_photo' %}" method="post" enctype="multipart/form-data">
+                  {% csrf_token %}
+                    <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" class="form-control" name="location" id="location" value="">
+                    <label for="date">Date</label>
+                    <input type="text" class="form-control" name="date" id="date" value="">
+
+                    <label for="date">Tags
+                        <button id="edit" onclick="editTags()" type="button" style="border: none; background: transparent; display: inline-block">
+                                <i style="margin-left: 10px" class="fas fa-edit"></i>
+                            </button>
+                        <button id="check" onclick="getTags()" type="button" style="border: none; background: transparent; display: none">
+                                <i style="margin-left: 10px" class="fas fa-check"></i></button>
+                        <button id="add" onclick="addTag(this)" type="button" style="border: none; background: transparent; display: none">
+                                <i style="margin-left: 10px" class="fas fa-plus"></i></button>
+                    </label>
+                    <div id="tag-list" style="display:none;">
+                    </div>
+                    <div style="display: block" id="show-tags">
+                        <input class="form-control"  type="text" id="show-all-tags" value="" readonly>
+                    </div>
+
+                    <input type="hidden" name="id" id="id" value="">
+                    <input type="hidden" name="col_id" id="col_id" value="{{ col.id }}"/>
+
+                  </div>
+                    <input  id="tags-list" name="tags-list" type="hidden" value="">
+                 <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-dark btn-lg">Save changes</button>
+                  </div>
+                </form>
+
+            </div>
+
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="deletePhoto" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Are you sure?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete the photo. This action cannot be undone.
+        <form action="{% url 'shared_photo_library:update_photo' %}" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+            <input type="hidden" name="id" id="delete_photo_id" value="">
+            <input type="hidden" name="delete" id="id" value="true">
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-dark">Delete</button>
+          </div>
+
+        </form>
+
+      </div>
+
+
+    </div>
+  </div>
+</div>
+    <div class="modal fade" id="shareWithUser" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+        {% if user == col.owner %}
+            <div class="modal-header">
+                <h5 style="font-size: 32px" class="modal-title" id="exampleModalLabel">Share Collection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+             <div class="modal-body">
+              <div class="p-1 border bg-warning">Collection Shared With</div>
+              <br>
+              <div class="row">
+                  {% if shared_users %}
+                      {% for username, user in shared_users.items %}
+                          <div class="col-md-3">
+                            <div class="p-1 border" style="background-color: #cbc7c7"><i onclick="unshareWith({{ user.id }})" class="fas fa-user-minus"></i><b style="color: #262424; margin-left: 5px"> {{ username}}</b></div>
+                          </div>
+                      {% endfor %}
+
+                  {% else %}
+                      <h5>This collection not shared with anyone.</h5>
+                  {% endif %}
+
+              </div>
+              <br>
+              <form id="shareForm" action="{% url 'shared_photo_library:collection_detail' id=col.id %}"  action="" method="post" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <div class="mb-3">
+                    <label for="username" class="form-label">User's username that you want to share this collection with:</label>
+                    <input type="text" class="form-control" name="share-with" id="username" aria-describedby="emailHelp">
+                    <div style="display: none" id="userWarning" class="form-text">heyyoo</div>
+                  </div>
+                  <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button onclick="shareWith({{ not_shared_users }})" type="button" class="btn btn-dark">Share</button>
+                  </div>
+              </form>
+              <form id="unshareForm" action="{% url 'shared_photo_library:collection_detail' id=col.id %}" method="post" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <input type="hidden" value="" name="unshare-with" id="unshareWith">
+              </form>
+
+
+          </div>
+
+        {% else %}
+            <div class="modal-header">
+                <h5 style="font-size: 32px" class="modal-title" id="exampleModalLabel">Not Allowed</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5 style="font-size: 16px">This collection is shared with you.</h5>
+                <h5 style="font-size: 16px">You don't have the access to share it. You are allowed to only inspect and update the collection.</h5>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Ok</button>
+            </div>
+
+
+        {% endif %}
+
+
+
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="createView" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Create view for this collection.</h5>
+
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+               <small style="color: #bbbbbb">&#8226; Use - for the fields you want to left empty</small>  <br>
+                <small style="color: #bbbbbb">&#8226; Use yyyy-mm-dd format for date fields.</small>
+                <br><br>
+                <form id="createViewForm" action="{% url 'shared_photo_library:views' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ view_form|crispy }}
+                    <input type="hidden" name="filter-tags" id="filterTags" value=""/>
+                    <input type="hidden" name="col_id" id="col_id" value="{{ col.id }}"/>
+                    <input type="hidden" name="conj" id="conj" value=""/>
+                    <input type="hidden" name="create" id="create" value="true"/>
+
+                </form>
+                <br>
+
+                <h5 class="p-1 border bg-warning">Select filter tags</h5>
+                <div class="row">
+                {% for filter_tag in filter_tags %}
+                    <div class="col-md-3">
+                        <div class="form-check">
+                          <input onchange="filterCheckChanged('{{ filter_tag }}')" class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+                          <label class="form-check-label" for="flexCheckDefault">
+                              {{ filter_tag }}
+                          </label>
+                        </div>
+                    </div>
+                {% endfor %}
+
+            </div>
+                <br>
+                <h5 class="p-1 border bg-warning">Filter tags in ... form: </h5>
+
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1">
+                  <label class="form-check-label" for="inlineRadio1">Conjunctive</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2" value="option2">
+                  <label class="form-check-label" for="inlineRadio2">Disjunctive</label>
+                </div>
+
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button onclick="createView()" type="button" class="btn btn-dark" >Create</button>
+            </div>
+
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="addPhotoToCollection" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 style="font-size:32px " class="modal-title" id="exampleModalLabel">Select Photos</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <div class="container">
+                  <div class="row justify-content-md-center">
+                    {% for ph in users_not_added_photos %}
+
+                        <div class="col-md-3">
+                            <div class="card text-center" style="">
+                              <div class="card-body">
+                                  <img class="cover" src="{{ ph.photo.url }}" alt="Avatar" style="height:100px; width:100px;">
+                                  <div class="form-check" style="margin-left: 60px; margin-top: 10px">
+                                      <input onchange="checkChanged({{ ph.id }})" style="width: 20px; height: 20px" class="form-check-input" type="checkbox" value="" id="check-{{ ph.id }}">
+                                  </div>
+                              </div>
+                            </div>
+
+                        </div>
+
+                    {%endfor  %}
+                  </div>
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Close</button>
+            <button onclick="addPhotos({{ col.id }})" type="button" class="btn btn-dark btn-lg">Save changes</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <form id="addPhotosForm" action="{% url 'shared_photo_library:collection_detail' id=col.id %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="selected-photos" id="selected-photos" value="">
+        <input type="hidden" name="col_id" id="col_id" value="{{ col.id }}">
+    </form>
+    <form id="removeSelectedPhotos" action="{% url 'shared_photo_library:collection_detail' id=col.id %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="remove-selected-photos" id="remove-selected-photos" value="">
+    </form>
+<script>
+
+function loadModal(ph_id, ph_loc, ph_date, ph_tags, col_id){
+    let id = document.getElementById('id');
+    let loc = document.getElementById('location');
+    let date = document.getElementById('date');
+    let tags = document.getElementById('show-all-tags');
+
+
+
+    loc.value = ph_loc;
+    if(ph_date == 'None'){
+        date.value = "-";
+
+    }
+    else{
+        date.value = ph_date;
+
+    }
+    tags.value = ph_tags;
+    id.value = ph_id;
+    let tagList = document.getElementById('tag-list')
+    console.log(ph_tags)
+    for(let i in ph_tags){
+        let newNode = document.createElement('div');
+        let tag = "<div style='margin-bottom: 5px' class='input-group'><input type='text' class='form-control' name='tags' id='tags' value="+ph_tags[i]+"><div class='input-group-append'><span style='background: none; border: none' class='input-group-text'><a onclick='removeTag(this)' > <i style='margin-left: 10px; margin-top: 10px' class='fas fa-times fa-2x'></i> </a></span> </div> </div>"
+        newNode.innerHTML = tag;
+        tagList.append(newNode)
+
+
+    }
+    $('#exampleModal').modal('show')
+
+}
+function removeTag(element){
+    let tagRow = element.parentNode.parentNode.parentNode;
+    tagRow.remove()
+}
+
+function addTag(element){
+    let editTags = document.getElementById('tag-list');
+    let newNode = document.createElement('div');
+    let tag = "<div style='margin-bottom: 5px' class='input-group'><input type='text' class='form-control' name='tags' id='tags' value=''><div class='input-group-append'><span style='background: none; border: none' class='input-group-text'><a onclick='removeTag(this)' > <i style='margin-left: 10px; margin-top: 10px' class='fas fa-times fa-2x'></i> </a></span> </div> </div>"
+    newNode.innerHTML = tag;
+    editTags.append(newNode)
+    {#console.log(tagsDiv)#}
+
+    {#tagsDiv.innerHtml += tag#}
+}
+
+function getTags(){
+    let tags = [];
+    $("input[name='tags']").each(function() {
+        tags.push($(this).val());
+    });
+    let tagsList = document.getElementById('tags-list')
+    tagsList.value = tags.toString()
+    let tagEdit = document.getElementById('tag-list')
+    tagEdit.hidden=false
+    let allTags = document.getElementById('show-all-tags');
+    allTags.value = tags
+    let showTagsDiv = document.getElementById('show-tags');
+    showTagsDiv.style.display='block'
+
+    let editButton = document.getElementById('edit');
+    let checkButton = document.getElementById('check');
+    let addButton = document.getElementById('add');
+    let editTags = document.getElementById('tag-list');
+
+    editButton.style.display = "inline-block";
+    checkButton.style.display = "none";
+    addButton.style.display = "none";
+    editTags.style.display='none'
+
+
+
+
+}
+
+function editTags(){
+    let editButton = document.getElementById('edit');
+    let checkButton = document.getElementById('check');
+    let addButton = document.getElementById('add');
+    let showTagsDiv = document.getElementById('show-tags');
+    let editTags = document.getElementById('tag-list');
+
+    editButton.style.display = "none";
+    checkButton.style.display = "inline-block";
+    addButton.style.display = "inline-block";
+    showTagsDiv.style.display = "none";
+    editTags.style.display='block'
+
+}
+
+function addPhotos(col_id){
+    document.getElementById("col_id").value = col_id
+    document.getElementById('addPhotosForm').submit();
+
+}
+
+function checkChanged(id){
+    id=id.toString();
+    let ids = [];
+    let selectedPhotos = document.getElementById('selected-photos');
+    ids = selectedPhotos.value.split(',')
+    const index = ids.indexOf(id);
+    if (index > -1) {
+        ids.splice(index, 1);
+    }
+    else{
+        ids.push(id)
+    }
+    selectedPhotos.value = ids.join()
+}
+
+function removeCheckChanged(id){
+    id=id.toString();
+    let ids = [];
+    let selectedPhotos = document.getElementById('remove-selected-photos');
+    ids = selectedPhotos.value.split(',')
+    const index = ids.indexOf(id);
+    if (index > -1) {
+        ids.splice(index, 1);
+    }
+    else{
+        ids.push(id)
+    }
+    selectedPhotos.value = ids.join()
+    console.log(selectedPhotos.value)
+}
+
+function selectToRemove(button){
+    console.log(button.innerHTML)
+    if(button.innerHTML==='<i class="fas fa-hand-pointer" aria-hidden="true"></i> Select'){
+        let checks = document.getElementsByClassName('remove-selected');
+        for(let i = 0; i < checks.length; i++) {
+          checks[i].style.display='block'
+        }
+        button.innerHTML = 'Cancel'
+        let removeSelectedButton = document.getElementById('removeSelectedButton');
+        removeSelectedButton.style.display='inline-block'
+    }
+    else{
+        let checks = document.getElementsByClassName('remove-selected');
+        for(let i = 0; i < checks.length; i++) {
+          checks[i].style.display='none'
+        }
+        button.innerHTML = '<i class="fas fa-hand-pointer" aria-hidden="true"></i> Select'
+        let removeSelectedButton = document.getElementById('removeSelectedButton');
+        removeSelectedButton.style.display='none'
+    }
+}
+
+function removeSelectedPhotos(){
+    document.getElementById('removeSelectedPhotos').submit();
+}
+
+function unshareWith(user_id){
+    {#console.log(user_id)#}
+    let unshare = document.getElementById('unshareWith');
+    unshare.value = user_id;
+    document.getElementById('unshareForm').submit();
+}
+
+function shareWith(not_shared_users){
+    console.log(not_shared_users)
+    let share = document.getElementById('username')
+    let username = share.value
+    const index = not_shared_users.indexOf(username);
+    if (index > -1) {
+        document.getElementById('shareForm').submit();
+    }
+    else{
+        let warning = document.getElementById("userWarning")
+        warning.innerHTML = "No users found."
+        warning.style.display = "block"
+    }
+
+}
+
+function filterCheckChanged(tag){
+    let tags = [];
+    let filterTags = document.getElementById('filterTags');
+    tags = filterTags.value.split(',')
+    const index = tags.indexOf(tag);
+    if (index > -1) {
+        tags.splice(index, 1);
+    }
+    else{
+        tags.push(tag)
+    }
+    filterTags.value = tags.join()
+    console.log(filterTags.value);
+}
+
+function createView(){
+    let conj = document.getElementById('inlineRadio1');
+    let disj = document.getElementById('inlineRadio2');
+    let conjunctive = false;
+    if(conj.checked){
+        conjunctive = true;
+    }
+    document.getElementById('conj').value = conjunctive
+    document.getElementById('createViewForm').submit()
+}
+
+
+
+let modal = document.getElementById('exampleModal')
+modal.addEventListener('hidden.bs.modal', function (event) {
+        let tagList = document.getElementById('tag-list');
+        tagList.innerHTML="";
+        let showTagsDiv = document.getElementById('show-tags');
+        showTagsDiv.style.display='block'
+
+        let editButton = document.getElementById('edit');
+        let checkButton = document.getElementById('check');
+        let addButton = document.getElementById('add');
+        let editTags = document.getElementById('tag-list');
+
+        editButton.style.display = "inline-block";
+        checkButton.style.display = "none";
+        addButton.style.display = "none";
+        editTags.style.display='none'
+})
+
+let shareModal = document.getElementById('shareWithUser')
+shareModal.addEventListener('hidden.bs.modal', function (event) {
+    let share = document.getElementById('username');
+    share.value = "";
+    let warning = document.getElementById("userWarning")
+    warning.style.display = "none"
+
+
+})
+
+
+</script>
+
+{% endblock %}
+
+
+
+
+

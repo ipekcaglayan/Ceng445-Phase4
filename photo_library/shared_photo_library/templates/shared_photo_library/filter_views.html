@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/my_profile.css' %}?v1.2">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <title>{{ user.username }}'s Views</title>
+
+
+{% endblock %}
+{% block body %}
+    <!-- Button trigger modal -->
+
+
+<!-- Modal -->
+<div class="container">
+    <div class="row">
+        {% for view in views %}
+
+        <div class="col-md-3">
+        <a href="{% url 'shared_photo_library:view_detail' id=view.id %}">
+            <div class="card" style="width: 18rem;">
+              <div class="card-body">
+                <h6 style="text-align: center" class="card-text">{{ view.view_name }}</h6>
+                 <p style="text-align: center; font-size: small; color: #a0a0af">created by <i>{{ view.owner }}</i> </p>
+                 <p style="text-align: center; font-size: small; color: #a0a0af"><i>{{ view.created_date }}</i> </p>
+                 <p style="text-align: center; font-size: small; color: #a0a0af">({{ view.photo_number }})</p>
+              </div>
+              <img class="cover" src="{{view.cover.url}}"  alt="...">
+
+            </div>
+        </a>
+
+
+        </div>
+
+        {%endfor  %}
+    </div>
+</div>
+{% endblock %}
