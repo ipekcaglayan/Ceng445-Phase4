@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from .views import Login, Home, SignUp, UploadPhoto, MyProfile, PhotoView, CollectionView, CollectionDetail, Filter,\
+from .views import Login, Home, SignUp, UploadPhoto, PhotoView, CollectionView, CollectionDetail, Filter,\
     FilterViewDetail, Logout, GetNotifications
 
 app_name = 'shared_photo_library'
@@ -11,7 +11,6 @@ urlpatterns = [
     path('logout', Logout.as_view(), name="logout"),
     path('sign-up', SignUp.as_view(), name="signup"),
     path('upload-photo', UploadPhoto.as_view(), name="upload_photo"),
-    path('my-profile', MyProfile.as_view(), name="my_profile"),
     path('photo', PhotoView.as_view(), name="update_photo"),
     path('photos', PhotoView.as_view(), name="photos"),
     path('collections', CollectionView.as_view(), name="collections"),

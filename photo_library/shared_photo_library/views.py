@@ -15,7 +15,6 @@ from .forms import *
 class Login(View):
     def get(self, request):
         form = AuthenticationForm()
-        # signup_form = UserCreationForm()
         return render(request, 'shared_photo_library/homepage.html', {'form': form})
 
     def post(self, request):
@@ -23,7 +22,6 @@ class Login(View):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            print("user  logged in")
             return redirect('shared_photo_library:home')
         return render(request, 'shared_photo_library/homepage.html', {'form': form, 'user_authenticated': False})
 
@@ -75,17 +73,6 @@ class UploadPhoto(LoginRequiredMixin, View):
             new_photo.load_meta_data()
             return redirect('shared_photo_library:photos')
 
-    def get(self, request):
-        form = AddPhoto()
-        return render(request, "shared_photo_library/upload_photo.html", {'form': form})
-
-
-class MyProfile(View):
-    def get(self, request):
-        logged_in_user = request.user
-        return render(request, 'shared_photo_library/my_profile.html',
-                      {'user': logged_in_user})
-
 
 class PhotoView(LoginRequiredMixin, View):
     def get(self, request):
@@ -94,9 +81,7 @@ class PhotoView(LoginRequiredMixin, View):
         photos = photo_tags_as_list(photos)
         shared_collections = list(Collection.objects.filter(shared_users=logged_in_user).values('id', 'collection_name'))
         users_collections = list(Collection.objects.filter(owner=logged_in_user).values('id', 'collection_name'))
-        # return render(request, 'shared_photo_library/photos.html',
-        #               {'user': logged_in_user, 'photos': photos, 'shared_collections': shared_collections,
-        #                'users_collections': users_collections})
+
         form = AddPhoto()
         return render(request, 'shared_photo_library/all_photos.html',
                       {'user': logged_in_user, 'photos': photos, 'shared_collections': shared_collections,
@@ -141,10 +126,6 @@ class PhotoView(LoginRequiredMixin, View):
             view.filter_by_view()
 
         return JsonResponse({})
-        if data.get('col_id'):
-            col_id = int(data['col_id'])
-            return redirect('shared_photo_library:collection_detail', id=col_id)
-        return redirect('shared_photo_library:photos')
 
 
 class CollectionView(LoginRequiredMixin, View):
@@ -154,9 +135,7 @@ class CollectionView(LoginRequiredMixin, View):
         users_collections = list(Collection.objects.filter(owner=logged_in_user).annotate(photo_number=Count('photos')))
         shared_collections = list(Collection.objects.filter(shared_users=logged_in_user).annotate(photo_number=Count('photos')))
         collections = users_collections + shared_collections
-        # return render(request, 'shared_photo_library/collections.html',
-        #               {'user': logged_in_user, 'form': form, 'collections': collections,
-        #                'users_collections': users_collections, 'shared_collections': shared_collections})
+
         return render(request, 'shared_photo_library/all_collections.html',
                       {'user': logged_in_user, 'form': form, 'collections': collections,
                        'users_collections': users_collections, 'shared_collections': shared_collections})
@@ -190,10 +169,6 @@ class CollectionDetail(LoginRequiredMixin, View):
         # users that collection already shared with
         shared_users = {user.username: user for user in User.objects.filter(shared_collections=col)}
 
-        # return render(request, 'shared_photo_library/collection_detail.html',
-        #               {'user': request.user, 'col': col, 'photos': photos, 'users_all_photos': users_all_photos,
-        #                'not_shared_users': not_shared_users, 'shared_users': shared_users, 'view_form': view_form,
-        #                'filter_tags': list(filter_tags)})
         return render(request, 'shared_photo_library/col_detail.html',
                       {'user': request.user, 'col': col, 'photos': photos, 'users_all_photos': users_all_photos,
                        'not_shared_users': not_shared_users, 'shared_users': shared_users, 'view_form': view_form,
@@ -265,9 +240,6 @@ class Filter(LoginRequiredMixin, View):
         users_views = list(FilterView.objects.filter(owner=logged_in_user).annotate(photo_number=Count('photos')))
         shared_views = list(FilterView.objects.filter(shared_users=logged_in_user).annotate(photo_number=Count('photos')))
         views = users_views + shared_views
-        # return render(request, 'shared_photo_library/filter_views.html',
-        #               {'user': logged_in_user, 'users_views': users_views, 'shared_views': shared_views,
-        #               'views': views})
 
         return render(request, 'shared_photo_library/views.html',
                       {'user': logged_in_user, 'users_views': users_views, 'shared_views': shared_views,
@@ -304,9 +276,6 @@ class FilterViewDetail(LoginRequiredMixin, View):
 
         # users that collection already shared with
         shared_users = {user.username: user for user in User.objects.filter(shared_views=view)}
-        # return render(request, 'shared_photo_library/filter_view_detail.html',
-        #               {'user': logged_in_user, 'photos': photos, 'view': view, 'filter_tags': filter_tags,
-        #                'not_shared_users': not_shared_users, 'shared_users': shared_users})
 
         return render(request, 'shared_photo_library/view_detail.html',
                       {'user': logged_in_user, 'photos': photos, 'view': view, 'filter_tags': filter_tags,
@@ -342,8 +311,6 @@ class FilterViewDetail(LoginRequiredMixin, View):
 
 
 class GetNotifications(LoginRequiredMixin, View):
-    def get(self, request, **kwargs):
-        print(request.user)
 
     def post(self, request, **kwargs):
         print(request.user)

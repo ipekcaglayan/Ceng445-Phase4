@@ -1,10 +1,6 @@
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 import json
-from .models import *
-from datetime import datetime
-from django.db.models import Q
-from isbnlib import meta
 
 
 class NotificationConsumer(WebsocketConsumer):

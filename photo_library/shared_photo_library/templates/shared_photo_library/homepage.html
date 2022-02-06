@@ -10,14 +10,6 @@
 
 {% endblock %}
 
-{% if user_authenticated %}
-    {% block contains_link %}
-    <a class="nav-link" onclick="showNotifications()" href="#"><i id="notification" style="color: black" class="far fa-bell"><b id="notificationNumber"></b></i></a>
-
-    {% endblock %}
-{% endif %}
-
-
 
 {% block content %}
 
