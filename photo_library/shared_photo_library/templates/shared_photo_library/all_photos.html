@@ -38,9 +38,9 @@
                                                 <img class="img-fluid tm-img cover" src="{{ photo.photo.url }}" alt="Image"  style="height:300px; width:300px;">
                                                 <figcaption>
 
-                                                <p class="tm-figure-description">Location: {{ photo.location }}</p>
-                                                  <p class="tm-figure-description">Date: {{ photo.date}}</p>
-                                                  <p class="tm-figure-description">Tags: {{ photo.tags }} </p>
+                                                <p id="{{ photo.id }}-loc" class="tm-figure-description">Location: {{ photo.location }}</p>
+                                                  <p id="{{ photo.id }}-date" class="tm-figure-description">Date: {{ photo.date}}</p>
+                                                  <p id="{{ photo.id }}-tags" class="tm-figure-description">Tags: {{ photo.tags }} </p>
                                                 <a class="tm-figure-description" href="{{ photo.photo.url }}"> <i class="fas fa-photo-video "></i> </a>
 
                                             </figcaption>
@@ -117,7 +117,7 @@
                     <input  id="tags-list" name="tags-list" type="hidden" value="">
                  <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-dark btn-lg">Save changes</button>
+                    <button onclick="SaveChanges()" data-bs-dismiss="modal" type="button" class="btn btn-dark btn-lg">Save changes</button>
                   </div>
                 </form>
 
@@ -251,6 +251,50 @@
 
 
 <script>
+function getCookie(name) {
+  if (!document.cookie) {
+    return null;
+  }
+
+  var cookie = document.cookie.split(';')[0];
+
+  return cookie.split('=')[1]
+
+}
+
+function SaveChanges(){
+    const url = "{% url 'shared_photo_library:update_photo' %}";
+
+    const csrfToken = getCookie('CSRF-TOKEN');
+    let loc = document.getElementById("location").value
+    let date = document.getElementById("date").value
+    let tags_list = document.getElementById("tags-list").value
+    let id = document.getElementById('id').value
+        const data = {
+            location: loc,
+            date: date,
+            tags_list: tags_list,
+            id: id
+        }
+        console.log(data, "data")
+        fetch(url, {
+          method: 'POST', // or 'PUT'
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById(id+"-loc").innerText = "LOCATION: "+loc
+            document.getElementById(id+"-date").innerText = "DATE: "+ date
+            document.getElementById(id+"-tags").innerText = "TAGS: "+ (tags_list.split(",")).toString();
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+}
 
 function loadModal(ph_id, ph_loc, ph_date, ph_tags){
     let id = document.getElementById('id');

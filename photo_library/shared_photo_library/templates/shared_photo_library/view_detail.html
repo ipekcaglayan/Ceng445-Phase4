@@ -76,11 +76,11 @@
              <div class="modal-body">
               <div class="p-1 border bg-warning">View Shared With</div>
               <br>
-              <div class="row">
+              <div id="shared-users-grid" class="row">
                   {% if shared_users %}
-                      {% for username, user in shared_users.items %}
+                      {% for username, u in shared_users.items %}
                           <div class="col-md-3">
-                            <div class="p-1 border" style="background-color: #cbc7c7"><i onclick="unshareWith({{ user.id }})" class="fas fa-user-minus"></i><b style="color: #262424; margin-left: 5px"> {{ username}}</b></div>
+                            <div id="shared-{{ u.id }}" class="p-1 border" style="background-color: #cbc7c7"><i onclick="unshareWith({{ u.id }}, {{ view.id }}, {{ user.id }})" class="fas fa-user-minus"></i><b style="color: #262424; margin-left: 5px"> {{ username}}</b></div>
                           </div>
                       {% endfor %}
 
@@ -99,7 +99,7 @@
                   </div>
                   <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button onclick="shareWith({{ not_shared_users }})" type="button" class="btn btn-dark">Share</button>
+                        <button onclick="shareWith({{ not_shared_users }}, {{ view.id }}, {{ user.id }})" type="button" class="btn btn-dark">Share</button>
                   </div>
               </form>
               <form id="unshareForm" action="{% url 'shared_photo_library:view_detail' id=view.id %}" method="post" enctype="multipart/form-data">
@@ -202,30 +202,99 @@
   </div>
 </div>
 
-    <script>
+<script>
+var socket = new WebSocket('ws://' + window.location.host + '/notification/');
+function getCookie(name) {
+  if (!document.cookie) {
+    return null;
+  }
 
+  var cookie = document.cookie.split(';')[0];
 
+  return cookie.split('=')[1]
 
-function unshareWith(user_id){
+}
+
+function unshareWith(user_id, view_id, change_by){
     {#console.log(user_id)#}
     let unshare = document.getElementById('unshareWith');
     unshare.value = user_id;
-    document.getElementById('unshareForm').submit();
+
+    const url = "/shared-photo-library/view/"+view_id;
+        console.log(url);
+
+        const csrfToken = getCookie('CSRF-TOKEN');
+        const data = {
+            unshare_with: user_id,
+            unshare: true,
+        }
+        fetch(url, {
+          method: 'POST', // or 'PUT'
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            socket.send(JSON.stringify({'change': 'view', 'id': view_id, 'type': 'view-unshare', 'change_by': change_by}));
+            document.getElementById("shared-"+user_id).remove();
+            {#console.log(el.parentNode.parentNode)#}
+
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+
+
+    {#document.getElementById('unshareForm').submit();#}
 }
 
-function shareWith(not_shared_users){
-    console.log(not_shared_users)
+function shareWith(not_shared_users, view_id, user_id){
     let share = document.getElementById('username')
     let username = share.value
     const index = not_shared_users.indexOf(username);
-    if (index > -1) {
-        document.getElementById('shareForm').submit();
+
+    const url = "/shared-photo-library/view/"+view_id;
+    console.log(url);
+
+    const csrfToken = getCookie('CSRF-TOKEN');
+    const data = {
+        share_with: username,
+        share: true
     }
-    else{
-        let warning = document.getElementById("userWarning")
-        warning.innerHTML = "No users found."
-        warning.style.display = "block"
-    }
+    fetch(url, {
+      method: 'POST', // or 'PUT'
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        socket.send(JSON.stringify({'change': 'view', 'id': view_id, 'change_by': user_id, 'type': 'view-share', 'shared_with': username}));
+        var col = document.createElement("div");
+        col.className = "col-md-3";
+        var d = document.createElement("div");
+        d.className = "p-1 border" ;
+        d.style = "background-color: #cbc7c7";
+        var i = document.createElement('i');
+        i.className = "fas fa-user-minus";
+        {#i.onclick = 'unshareWith(user_id, col_id, user_id)';#}
+        var b = document.createElement('b');
+        b.style="color: #262424; margin-left: 5px";
+        b.innerText = username;
+        i.append(b);
+        d.append(i);
+        col.append(d);
+        document.getElementById("shared-users-grid").append(col);
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
 
 }
 

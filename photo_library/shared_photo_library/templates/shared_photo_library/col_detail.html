@@ -638,6 +638,7 @@ function unshareWith(user_id, col_id, change_by){
 }
 
 function shareWith(not_shared_users, col_id, user_id){
+    console.log("share with cagrildi");
     let share = document.getElementById('username')
     let username = share.value
 
@@ -667,7 +668,7 @@ function shareWith(not_shared_users, col_id, user_id){
         d.style = "background-color: #cbc7c7";
         var i = document.createElement('i');
         i.className = "fas fa-user-minus";
-        i.onclick = unshareWith(user_id, col_id, user_id);
+        {#i.onclick = 'unshareWith(user_id, col_id, user_id)';#}
         var b = document.createElement('b');
         b.style="color: #262424; margin-left: 5px";
         b.innerText = username;

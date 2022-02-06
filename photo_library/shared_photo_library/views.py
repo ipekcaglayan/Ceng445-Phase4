@@ -104,7 +104,7 @@ class PhotoView(LoginRequiredMixin, View):
 
     def post(self, request, **kwargs):
         user = request.user
-        data = request.POST.dict()
+        data = json.load(request)
         ph_id = data['id']
         photo = Photo.objects.get(id=ph_id)
         # print(data)
@@ -132,13 +132,15 @@ class PhotoView(LoginRequiredMixin, View):
         photo.add_location(data['location'])
         if "-" in data['date']:
             photo.add_date(data['date'])
-        photo.add_tags(data['tags-list'])
+        photo.add_tags(data['tags_list'])
 
         # all views updated: if tag x is added to a photo all views includes tag x must be updated
         # and all views can be contain tag x
         all_views = FilterView.objects.all()
         for view in all_views:
             view.filter_by_view()
+
+        return JsonResponse({})
         if data.get('col_id'):
             col_id = int(data['col_id'])
             return redirect('shared_photo_library:collection_detail', id=col_id)
@@ -311,8 +313,8 @@ class FilterViewDetail(LoginRequiredMixin, View):
                        'not_shared_users': not_shared_users, 'shared_users': shared_users})
 
     def post(self, request, **kwargs):
-        data = request.POST.dict()
-        # print(data)
+        data = json.load(request)
+        print(data)
         logged_in_user = request.user
         view_id = int(kwargs['id'])
         view = FilterView.objects.get(id=view_id)
@@ -322,15 +324,17 @@ class FilterViewDetail(LoginRequiredMixin, View):
             return HttpResponse(f"You don't have permission to see the view for the collection = {col.collection_name}",
                                 status=403)
 
-        if data.get('share-with'):
-            username = data.get('share-with')
+        if data.get('share_with'):
+            username = data.get('share_with')
             user = User.objects.get(username=username)
             view.share_with(user)
+            return JsonResponse({})
 
-        elif data.get('unshare-with'):
-            u_id = int(data.get('unshare-with'))
+        elif data.get('unshare_with'):
+            u_id = int(data.get('unshare_with'))
             user = User.objects.get(id=u_id)
             view.unshare_with(user)
+            return JsonResponse({})
 
         else:  # set filter form submitted to update view filters
             view.update_view(data)
@@ -375,10 +379,20 @@ class GetNotifications(LoginRequiredMixin, View):
                                              'collection_name': col.collection_name, 'date': str(col.created_date),
                                              'created_by': col.owner.username, 'url': col.cover.url, 'id': col.id})
 
-
-
         else:  # there are changes in the view
-            pass
+            view_id = int(data['id'])
+            view = FilterView.objects.get(id=view_id)
+            if data['type'] == "view-unshare":
+                notification = f"View {view.view_name} unshared with you."
+                return JsonResponse({'change': True, 'notification': notification, 'type': data['type'],
+                                     'id': view.id})
+            if request.user in view.shared_users.all() or request.user == view.owner:
+                if request.user.id != int(data['change_by']):
+                    if data['type'] == "view-share":
+                        notification = f"{User.objects.get(id=int(data['change_by'])).username} shared the view {view.view_name} with {data['shared_with']}"
+                        return JsonResponse({'change': True, 'notification': notification, 'type': data['type'],
+                                             'view_name': view.view_name, 'date': str(view.created_date),
+                                             'created_by': view.owner.username, 'url': view.cover.url, 'id': view.id})
 
         return JsonResponse({'change': False, 'notification': ""})
 

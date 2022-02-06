@@ -9,10 +9,6 @@
 
 {% endblock %}
 
-{% block contains_link %}
-    <a class="nav-link" onclick="showNotifications()" href="#"><i id="notification" style="color: black" class="far fa-bell"><b id="notificationNumber"></b></i></a>
-
-{% endblock %}
 
 
 {% block content %}
@@ -21,9 +17,9 @@
             <div class="container-fluid js-tm-page-content" data-page-no="5" >
                 <br><br><br>
                 <div class="container">
-                    <div class="row">
+                    <div id="views" class="row">
                             {% for view in views %}
-                                <div class="grid-item">
+                                <div id="view-{{ view.id }}" class="grid-item">
                                     <figure class="effect-bubba">
                                         <img class="img-fluid tm-img cover" src="{{ view.cover.url }}" alt="Image"  style="height:300px; width:300px;">
                                         <figcaption>
@@ -56,12 +52,6 @@
       </div>
       <div class="modal-body">
           <div id="notifications">
-              <div class="alert alert-info" role="alert">
-                  A simple info alert—check it out!
-              </div>
-              <div class="alert alert-info" role="alert">
-                  A simple info alert—check it out!
-              </div>
           </div>
       </div>
     </div>
@@ -73,6 +63,128 @@
     function showNotifications(){
         $('#notificationModal').modal('show')
     }
+
+</script>
+
+
+<script>
+function getCookie(name) {
+  if (!document.cookie) {
+    return null;
+  }
+
+  var cookie = document.cookie.split(';')[0];
+
+  return cookie.split('=')[1]
+
+}
+    var socket = new WebSocket('ws://' + window.location.host + '/notification/');
+    console.log(socket)
+
+        socket.onopen = function open() {
+          console.log('WebSockets connection created.');
+          {#socket.close();#}
+        };
+
+        socket.onmessage = function(e) {
+            console.log("socket message aldi")
+            const data = e.data
+            const csrfToken = getCookie('CSRF-TOKEN');
+            const url = "{% url 'shared_photo_library:notifications' %}";
+            fetch(url, {
+              method: 'POST', // or 'PUT'
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+              },
+              body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("data: ", data)
+                if(data['change']){
+                    if(data['type']==="view-share"){
+                        var col_item= document.createElement("div");
+                        col_item.className = "grid-item";
+                        col_item.id = "view-"+data['id'];
+                        var fig = document.createElement("figure");
+                        fig.className = "effect-bubba";
+                        var img = document.createElement("img");
+                        img.src = data['url']
+                        img.style = "height:300px; width:300px";
+                        img.className = "img-fluid tm-img cover";
+                        img.style = "height:300px; width:300px;"
+
+                        var figcapt = document.createElement("figcaption");
+
+                        var h3 = document.createElement("h3");
+                        h3.style = "background-color: #cdcadd; width: 300px; padding-bottom: 10px; padding-top: 10px";
+                        h3.className = 'tm-figure-title';
+                        h3.append(document.createElement("span").textContent= data['view_name']);
+                        figcapt.append(h3);
+                        var p = document.createElement("p");
+                        p.className = 'tm-figure-description';
+                        p.textContent = "created by "+ data['created_by']
+                        figcapt.append(p);
+
+                        p = document.createElement("p");
+                        p.className = 'tm-figure-description';
+                        p.textContent = data['date']
+                        figcapt.append(p);
+
+                        var link = document.createElement("a");
+                        link.className = 'tm-figure-description';
+
+                        link.href = "/shared-photo-library/view/"+data['id'];
+                        figcapt.append(link);
+
+                        fig.append(img);
+                        fig.append(figcapt);
+
+                        col_item.append(fig);
+                        document.getElementById("views").append(col_item);
+
+                    }
+
+                    else if(data['type']==="view-unshare"){
+                        document.getElementById("view-"+data['id']).remove()
+                    }
+                    var notification = document.createElement('div');
+                    notification.className = "alert alert-info";
+                    notification.role = "alert";
+                    notification.innerText = data['notification'];
+
+                    document.getElementById("notifications").append(notification);
+
+                    var not = document.getElementById("notification");
+                    var notNo = document.getElementById("notificationNumber");
+                    not.style.color = "red";
+
+                    if(notNo.innerText ===""){
+                        notNo.innerText = "1";
+                    }
+                    else{
+                        notNo.innerText = (parseInt(notNo.innerText)+1).toString();
+                    }
+
+                }
+
+
+              console.log('heyyyoo notifications oldu mu:', data);
+
+            })
+            .catch((error) => {
+              console.error('Error:', error);
+            });
+
+
+            console.log(data)
+            console.log("loloooooooooooooooooooooooo");
+
+        };
+        socket.onclose = function(e) {
+            console.log('Notification socket closed');
+        };
 
 </script>
 
