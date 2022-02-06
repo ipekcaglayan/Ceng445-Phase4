@@ -9,7 +9,6 @@ import pytz
 utc = pytz.UTC
 
 
-
 class Photo(models.Model):
     photo = models.ImageField(blank=True)
     location = models.CharField(max_length=100, null=True)
@@ -29,7 +28,7 @@ class Photo(models.Model):
                 yymmdd = [int(x) for x in dates[0].split(":")]
                 saat = [int(x) for x in dates[1].split(":")]
                 self.date = datetime.datetime(*(yymmdd + saat))
-                print(self.date, "date")
+                # print(self.date, "date")
 
             latitude = img.get('gps_latitude')
             longitude = img.get('gps_longitude')
@@ -153,19 +152,19 @@ class FilterView(models.Model):
     def filter_by_view(self):
         self.photos.clear()
         self.save()
-        print(self.start_time, "start_time")
-        print(self.end_time, "end_time")
-        print(self.tags, "tags")
+        # print(self.start_time, "start_time")
+        # print(self.end_time, "end_time")
+        # print(self.tags, "tags")
         col_photos = self.collection.photos.all()
         orj_photos = {ph.id: ph for ph in col_photos}
         col_photos = photo_tags_as_list(col_photos)
         filter_tags = self.tags
         if filter_tags:
             filter_tags = filter_tags.split(',')
-            print(filter_tags)
+            # print(filter_tags)
             if len(filter_tags) > 1 and filter_tags[0] == "":
                 filter_tags = filter_tags[1:]
-            print(filter_tags)
+            # print(filter_tags)
             # print(filter_tags, " if icinde filter tags")
         # print(filter_tags, " if cikisi filter tags")
         for ph in col_photos:
@@ -200,7 +199,7 @@ class FilterView(models.Model):
                 else:
                     contains_all = True
                     for filter_tag in filter_tags:
-                        print(filter_tag, ph.tags)
+                        # print(filter_tag, ph.tags)
                         if filter_tag not in ph.tags:
                             contains_all = False
                     if not contains_all:
@@ -214,7 +213,7 @@ class FilterView(models.Model):
 
     def update_view(self, data):
         tags = data.pop('filter-tags')
-        print(tags)
+        # print(tags)
         conj = False
 
         if data.pop('conj') == "true":
@@ -237,8 +236,6 @@ class FilterView(models.Model):
 
         self.save()
         self.filter_by_view()
-
-
 
 
 

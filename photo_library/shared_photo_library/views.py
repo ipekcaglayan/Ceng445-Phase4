@@ -1,9 +1,12 @@
+import json
+from json import JSONDecodeError
+
 from django.db.models import Count, Q
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout
 from django.views import View
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import *
 from .forms import *
@@ -104,7 +107,7 @@ class PhotoView(LoginRequiredMixin, View):
         data = request.POST.dict()
         ph_id = data['id']
         photo = Photo.objects.get(id=ph_id)
-        print(data)
+        # print(data)
         if data.get('delete'):
             if user != photo.added_by:
                 return HttpResponse("It's not your photo you cannot delete it.", status=403)
@@ -157,11 +160,11 @@ class CollectionView(LoginRequiredMixin, View):
                        'users_collections': users_collections, 'shared_collections': shared_collections})
 
     def post(self, request):
-        new_col = Collection.objects.create(owner=request.user)
-        form = CreateCollection(request.POST, instance=new_col)
-        if form.is_valid():
-            form.save()
-            return redirect('shared_photo_library:collections')
+        data = json.load(request)
+        new_col = Collection.objects.create(owner=request.user, collection_name=data['col_name'])
+        response = {'col': list(Collection.objects.filter(id=new_col.id).annotate(photo_number=Count('photos')).
+                                values('id', 'collection_name', 'created_date', 'owner__username', 'photo_number'))[0]}
+        return JsonResponse(response)
 
 
 class CollectionDetail(LoginRequiredMixin, View):
@@ -197,18 +200,23 @@ class CollectionDetail(LoginRequiredMixin, View):
     def post(self, request, **kwargs):
         col_id = int(kwargs['id'])
         col = Collection.objects.get(id=col_id)
-        data = request.POST.dict()
+        try:
+            data = json.load(request)
+        except JSONDecodeError:
+            data = request.POST.dict()
+
         user = request.user
         if col.owner != user and (user not in col.shared_users.all()):
             return HttpResponse(f"You don't have permission to make any changes in collection = {col.collection_name}",
                                 status=403)
-        if data.get('remove'):  # form submitted to remove a photo from collection
-            photo_id = int(data.get('photo_id'))
+        if data.get('remove'):  # ajax request made to remove a photo from collection
+            photo_id = int(data.get('ph_id'))
             col.remove_photo_from_collection(Photo.objects.get(id=photo_id))
 
             views_attached_to_col = FilterView.objects.filter(collection=col)
             for view in views_attached_to_col:
                 view.filter_by_view()
+            return JsonResponse({})
         elif data.get('selected-photos'):
             selected_photos_ids = data['selected-photos'].split(',')[1:]
             col.add_photos_to_collection(selected_photos_ids)
@@ -253,7 +261,7 @@ class Filter(LoginRequiredMixin, View):
 
     def post(self, request):
         data = request.POST.dict()
-        print(data)
+        # print(data)
         col_id = int(data.get('col_id'))
         col = Collection.objects.get(id=col_id)
         user = request.user
@@ -292,7 +300,7 @@ class FilterViewDetail(LoginRequiredMixin, View):
 
     def post(self, request, **kwargs):
         data = request.POST.dict()
-        print(data)
+        # print(data)
         logged_in_user = request.user
         view_id = int(kwargs['id'])
         view = FilterView.objects.get(id=view_id)
@@ -315,6 +323,33 @@ class FilterViewDetail(LoginRequiredMixin, View):
         else:  # set filter form submitted to update view filters
             view.update_view(data)
         return redirect('shared_photo_library:view_detail', id=view_id)
+
+
+class GetNotifications(LoginRequiredMixin, View):
+    def get(self, request, **kwargs):
+        print(request.user)
+
+    def post(self, request, **kwargs):
+        print(request.user)
+        data = json.load(request)
+        data = json.loads(data)
+        if data['change'] == "col":
+            col_id = int(data['id'])
+            col = Collection.objects.get(id=col_id)
+            if request.user in col.shared_users.all() or request.user == col.owner:
+                if request.user.id != int(data['change_by']):
+                    if data['type'] == "remove":
+                        notification = f"{User.objects.get(id=int(data['change_by'])).username} removed a photo from the collection {col.collection_name}"
+                        return JsonResponse({'change': True, 'notification': notification, 'ph_id': data['ph_id'], 'type': data['type']})
+                    elif data['type'] == "add":
+                        notification = f"{User.objects.get(id=int(data['change_by'])).username} added photos to the collection {col.collection_name}"
+                    return JsonResponse({'notification': notification})
+
+        else:  # there are changes in the view
+            pass
+
+        return JsonResponse({'notification': ""})
+
 
 
 

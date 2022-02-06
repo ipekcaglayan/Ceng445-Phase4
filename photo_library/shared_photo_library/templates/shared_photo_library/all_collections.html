@@ -4,16 +4,17 @@
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'css/my_profile.css' %}?v1.2">
-{#    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>#}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <title>{{ user.username }}'s Collections</title>
 
 {% endblock %}
 
 
+
 {% block content %}
     <li class="selected">
         <div class="cd-full-width">
-            <div class="container-fluid js-tm-page-content" data-page-no="1" data-page-type="gallery">
+            <div class="container-fluid js-tm-page-content" data-page-no="5" >
 
                 <br><br><br>
 
@@ -22,7 +23,7 @@
                         <i class="fas fa-plus">  </i> Create Collection
                     </button>
                     <br><br>
-                    <div class="row">
+                    <div id="collections" class="row">
                         {% for col in collections %}
                             <div class="grid-item">
                                 <figure class="effect-bubba">
@@ -34,6 +35,8 @@
                                       <p class="tm-figure-description"> <i>{{ col.created_date }}</i> </p>
                                       <p class="tm-figure-description"> <i>({{ col.photo_number }})</i> </p>
                                     <a class="tm-figure-description" href="{% url 'shared_photo_library:collection_detail' id=col.id %}"></a>
+{#                                        <a class="tm-figure-description" href="/shared-photo-library/collection/{{col.id}}"></a>#}
+
 
                                 </figcaption>
                                 </figure>
@@ -57,19 +60,114 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-              <form action="{% url 'shared_photo_library:collections' %}" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                {{ form|crispy}}
-                  <br>
+              <br>
+              <label for="col_name">Collection Name</label>
+              <input type="text" id="col_name" value="">
+              <br><br>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-dark btn-lg">Create</button>
-          </div>
-              </form>
+                <button onclick="createColAjax({{user.id }})" data-bs-dismiss="modal" type="button" class="btn btn-dark btn-lg">Create</button>
+              </div>
           </div>
 
         </div>
       </div>
     </div>
 
+
+
+<script>
+
+
+
+    function getCookie(name) {
+      if (!document.cookie) {
+        return null;
+      }
+
+      var cookie = document.cookie.split(';')[0];
+
+      return cookie.split('=')[1]
+
+    }
+
+    function createColAjax(user_id){
+        const csrfToken = getCookie('CSRF-TOKEN');
+        const col_name = document.getElementById("col_name").value;
+        const data = {
+            user_id: user_id,
+            col_name: col_name
+        }
+        const url = "{% url 'shared_photo_library:collections' %}";
+        fetch(url, {
+          method: 'POST', // or 'PUT'
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Success:', data);
+                const col = data['col'];
+                var col_item= document.createElement("div");
+                col_item.className = "grid-item";
+                var fig = document.createElement("figure");
+                fig.className = "effect-bubba";
+                var img = document.createElement("img");
+                img.src = "/media/empty_col.jpg"
+                img.style = "height:300px; width:300px";
+                img.className = "img-fluid tm-img cover";
+                img.style = "height:300px; width:300px;"
+
+                var figcapt = document.createElement("figcaption");
+
+                var h3 = document.createElement("h3");
+                h3.style = "background-color: #cdcadd; width: 300px; padding-bottom: 10px; padding-top: 10px";
+                h3.className = 'tm-figure-title';
+                h3.append(document.createElement("span").textContent= col['collection_name']);
+                figcapt.append(h3);
+                var p = document.createElement("p");
+                p.className = 'tm-figure-description';
+                p.textContent = "created by "+ col['owner__username']
+                figcapt.append(p);
+
+                p = document.createElement("p");
+                p.className = 'tm-figure-description';
+                p.textContent = col['created_date']
+                figcapt.append(p);
+
+                p = document.createElement("p");
+                p.className = 'tm-figure-description';
+                p.textContent = col['photo_number']
+                figcapt.append(p);
+
+
+                var link = document.createElement("a");
+                link.className = 'tm-figure-description';
+
+                link.href = "/shared-photo-library/collection/"+col['id'];
+                figcapt.append(link);
+
+                fig.append(img);
+                fig.append(figcapt);
+
+                col_item.append(fig);
+                document.getElementById("collections").append(col_item);
+
+
+
+                {#console.log(col_item)#}
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+
+    }
+
+</script>
+
+
 {% endblock %}
+

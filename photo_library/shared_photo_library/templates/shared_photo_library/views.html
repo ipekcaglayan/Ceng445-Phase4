@@ -9,11 +9,16 @@
 
 {% endblock %}
 
+{% block contains_link %}
+    <a class="nav-link" onclick="showNotifications()" href="#"><i id="notification" style="color: black" class="far fa-bell"><b id="notificationNumber"></b></i></a>
+
+{% endblock %}
+
 
 {% block content %}
     <li class="selected">
         <div class="cd-full-width">
-            <div class="container-fluid js-tm-page-content" data-page-no="1" data-page-type="gallery">
+            <div class="container-fluid js-tm-page-content" data-page-no="5" >
                 <br><br><br>
                 <div class="container">
                     <div class="row">
@@ -42,5 +47,33 @@
         </div>
     </li>
 
+     <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 style="font-size: 32px" class="modal-title" id="exampleModalLabel">Notifications</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <div id="notifications">
+              <div class="alert alert-info" role="alert">
+                  A simple info alert—check it out!
+              </div>
+              <div class="alert alert-info" role="alert">
+                  A simple info alert—check it out!
+              </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+    function showNotifications(){
+        $('#notificationModal').modal('show')
+    }
+
+</script>
 
 {% endblock %}

@@ -49,7 +49,7 @@
 
                             <div class="grid-item">
                                 <figure class="effect-bubba">
-                                    <img class="img-fluid tm-img cover" src="{{ photo.photo.url }}" alt="Image"  style="height:300px; width:300px;">
+                                    <img id="img-{{photo.id}}" class="img-fluid tm-img cover" src="{{ photo.photo.url }}" alt="Image"  style="height:300px; width:300px;">
                                     <figcaption>
 
                                     <p class="tm-figure-description">Location: {{ photo.location }}</p>
@@ -66,14 +66,9 @@
                                         </button>
                                     </div>
                                     <div class="col">
-                                        <form action="{%  url 'shared_photo_library:collection_detail' id=col.id %}" method="post">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="photo_id" value="{{ photo.id }}">
-                                            <input type="hidden" name="remove" value="true">
-                                            <button type="submit" style="border: none; display: inline-block; background: transparent">
-                                            <i class="fas fa-folder-minus"></i>
-                                            </button>
-                                        </form>
+                                        <button onclick="removePhoto({{ photo.id }},{{ col.id }}, this, {{ user.id }})" type="button" style="border: none; display: inline-block; background: transparent">
+                                        <i class="fas fa-folder-minus"></i>
+                                        </button>
                                     </div>
 
 
@@ -313,13 +308,13 @@
           </div>
           <div class="modal-body">
               <div class="container">
-                  <div class="row justify-content-md-center">
+                  <div id="not-added-photos" class="row justify-content-md-center">
                     {% for ph in users_not_added_photos %}
 
                         <div class="col-md-3">
                             <div class="card text-center" style="">
                               <div class="card-body">
-                                  <img class="cover" src="{{ ph.photo.url }}" alt="Avatar" style="height:100px; width:100px;">
+                                  <img id="img-{{ ph.id }}" class="cover" src="{{ ph.photo.url }}" alt="Avatar" style="height:100px; width:100px;">
                                   <div class="form-check" style="margin-left: 60px; margin-top: 10px">
                                       <input onchange="checkChanged({{ ph.id }})" style="width: 20px; height: 20px" class="form-check-input" type="checkbox" value="" id="check-{{ ph.id }}">
                                   </div>
@@ -334,7 +329,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Close</button>
-            <button onclick="addPhotos({{ col.id }})" type="button" class="btn btn-dark btn-lg">Save changes</button>
+            <button onclick="addPhotos({{ col.id }}, {{ user.id }})" type="button" class="btn btn-dark btn-lg">Save changes</button>
           </div>
 
         </div>
@@ -350,6 +345,8 @@
         {% csrf_token %}
         <input type="hidden" name="remove-selected-photos" id="remove-selected-photos" value="">
     </form>
+
+
 <script>
 
 function loadModal(ph_id, ph_loc, ph_date, ph_tags, col_id){
@@ -444,9 +441,11 @@ function editTags(){
 
 }
 
-function addPhotos(col_id){
+function addPhotos(col_id, user_id){
     document.getElementById("col_id").value = col_id
     document.getElementById('addPhotosForm').submit();
+
+    socket.send(JSON.stringify({'change': 'col', 'id': col_id, 'change_by': user_id, 'type': 'add'}))
 
 }
 
@@ -589,7 +588,104 @@ shareModal.addEventListener('hidden.bs.modal', function (event) {
 
 </script>
 
+<script>
+
+
+
+    function getCookie(name) {
+      if (!document.cookie) {
+        return null;
+      }
+
+      var cookie = document.cookie.split(';')[0];
+
+      return cookie.split('=')[1]
+
+    }
+
+    function removePhoto(ph_id, col_id,  element, user_id){
+        console.log(ph_id)
+        var toBeDeleted = element.parentNode.parentNode.parentNode;
+        var img = toBeDeleted.childNodes[1].childNodes[1]
+        console.log(img.src);
+        {#console.log(toBeDeleted.childNodes[1].childNodes[1])#}
+        const url = "/shared-photo-library/collection/"+col_id;
+        console.log(url);
+
+        const csrfToken = getCookie('CSRF-TOKEN');
+        const data = {
+            ph_id: ph_id,
+            remove: true
+        }
+        fetch(url, {
+          method: 'POST', // or 'PUT'
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Success:', data);
+          toBeDeleted.remove();
+          var notAdded = document.getElementById("not-added-photos");
+          var col = document.createElement('div');
+          col.className = "col-md-3";
+
+          var card = document.createElement('div');
+          card.className = "card text-center";
+
+          var cardBody = document.createElement('div');
+          cardBody.className = "card-body";
+
+          var addImg = document.createElement('img');
+          addImg.src = img.src;
+          addImg.className = "cover";
+          addImg.alt = "Avatar";
+          addImg.style = "height:100px; width:100px;";
+
+          var formCheck = document.createElement("div");
+          formCheck.className = "form-check";
+          formCheck.style="margin-left: 60px; margin-top: 10px";
+
+          var input = document.createElement('input');
+          input.onchange = checkChanged(ph_id);
+          input.style="width: 20px; height: 20px";
+          input.className ="form-check-input";
+          input.type="checkbox";
+          input.id="check-"+ph_id;
+
+          formCheck.append(input);
+          cardBody.append(addImg);
+          cardBody.append(formCheck);
+          card.append(cardBody);
+          col.append(card);
+          notAdded.append(col);
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+
+
+        {#var notification = username + " removed a photo from collection "+ col_name;#}
+        console.log("sending message to socket");
+        socket.send(JSON.stringify({'change': 'col', 'id': col_id, 'change_by': user_id, 'type': 'remove', 'ph_id': ph_id}))
+    }
+
+</script>
+
+
 {% endblock %}
+
+
+<script>
+
+        socket.onmessage = function(e) {
+            console.log("HEYYOOO im here")
+        };
+
+    </script>
 
 
 
