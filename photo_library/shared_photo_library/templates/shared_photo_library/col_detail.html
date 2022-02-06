@@ -37,57 +37,57 @@
                             </div>
                             <br>
                             <div >
-                                <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058; display: inline-block" onclick="selectToRemove(this)" type="button" class="btn btn-lg"><i class="fas fa-hand-pointer"></i> Select</button>
+{#                                <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058; display: inline-block" onclick="selectToRemove(this)" type="button" class="btn btn-lg"><i class="fas fa-hand-pointer"></i> Select</button>#}
                                 <button style="color: #f0eff5;background-color: #5b1591;border-color: #143058; display: none" id="removeSelectedButton" onclick="removeSelectedPhotos()" type="button" class="btn btn-lg"> <i class="fas fa-minus"></i> Remove Selected Photos</button>
 
                             </div>
 
                         </div>
 
+                        <div id="photos-grid">
+                            {% for photo in photos %}
 
-                        {% for photo in photos %}
+                                <div class="grid-item">
+                                    <figure class="effect-bubba">
+                                        <img id="img-{{photo.id}}" class="img-fluid tm-img cover" src="{{ photo.photo.url }}" alt="Image"  style="height:300px; width:300px;">
+                                        <figcaption>
 
-                            <div class="grid-item">
-                                <figure class="effect-bubba">
-                                    <img id="img-{{photo.id}}" class="img-fluid tm-img cover" src="{{ photo.photo.url }}" alt="Image"  style="height:300px; width:300px;">
-                                    <figcaption>
+                                        <p class="tm-figure-description">Location: {{ photo.location }}</p>
+                                          <p class="tm-figure-description">Date: {{ photo.date}}</p>
+                                          <p class="tm-figure-description">Tags: {{ photo.tags }} </p>
+                                        <a class="tm-figure-description" href="{{ photo.photo.url }}"> <i class="fas fa-photo-video "></i> </a>
 
-                                    <p class="tm-figure-description">Location: {{ photo.location }}</p>
-                                      <p class="tm-figure-description">Date: {{ photo.date}}</p>
-                                      <p class="tm-figure-description">Tags: {{ photo.tags }} </p>
-                                    <a class="tm-figure-description" href="{{ photo.photo.url }}"> <i class="fas fa-photo-video "></i> </a>
+                                    </figcaption>
+                                    </figure>
+                                    <div class="row text-md-center" style="width: 100px; margin-left: 100px" >
+                                        <div class="col">
+                                            <button  onclick="loadModal('{{ photo.id }}','{{ photo.location }}', '{{ photo.date }}', {{ photo.tags }});" type="button" style="border: none; display: inline-block; background: transparent" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                            <i  class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                        <div class="col">
+                                            <button onclick="removePhoto({{ photo.id }},{{ col.id }}, this, {{ user.id }})" type="button" style="border: none; display: inline-block; background: transparent">
+                                            <i class="fas fa-folder-minus"></i>
+                                            </button>
+                                        </div>
 
-                                </figcaption>
-                                </figure>
-                                <div class="row text-md-center" style="width: 100px; margin-left: 100px" >
-                                    <div class="col">
-                                        <button  onclick="loadModal('{{ photo.id }}','{{ photo.location }}', '{{ photo.date }}', {{ photo.tags }});" type="button" style="border: none; display: inline-block; background: transparent" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                                        <i  class="fas fa-edit"></i>
-                                        </button>
+
+
+    {##}
+
+                                </div>
+                                    <div class="row text-md-center">
+                                        <div  class="form-check remove-selected" style="margin-left: 150px; margin-top: 10px; display: none">
+                                          <input onchange="removeCheckChanged({{ photo.id }})"  style="width: 20px; height: 20px" class="form-check-input" type="checkbox" value="" id="check-{{ photo.id }}">
+                                      </div>
                                     </div>
-                                    <div class="col">
-                                        <button onclick="removePhoto({{ photo.id }},{{ col.id }}, this, {{ user.id }})" type="button" style="border: none; display: inline-block; background: transparent">
-                                        <i class="fas fa-folder-minus"></i>
-                                        </button>
-                                    </div>
 
 
-
-{##}
-
-                            </div>
-                                <div class="row text-md-center">
-                                    <div  class="form-check remove-selected" style="margin-left: 150px; margin-top: 10px; display: none">
-                                      <input onchange="removeCheckChanged({{ photo.id }})"  style="width: 20px; height: 20px" class="form-check-input" type="checkbox" value="" id="check-{{ photo.id }}">
-                                  </div>
                                 </div>
 
 
-                            </div>
-
-
-                        {% endfor %}
-
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -182,11 +182,11 @@
              <div class="modal-body">
               <div class="p-1 border bg-warning">Collection Shared With</div>
               <br>
-              <div class="row">
+              <div id="shared-users-grid" class="row">
                   {% if shared_users %}
-                      {% for username, user in shared_users.items %}
-                          <div class="col-md-3">
-                            <div class="p-1 border" style="background-color: #cbc7c7"><i onclick="unshareWith({{ user.id }})" class="fas fa-user-minus"></i><b style="color: #262424; margin-left: 5px"> {{ username}}</b></div>
+                      {% for username, u in shared_users.items %}
+                          <div id="shared-{{ u.id }}" class="col-md-3">
+                            <div class="p-1 border" style="background-color: #cbc7c7"><i data-bs-dismiss="modal" onclick="unshareWith({{ u.id }}, {{ col.id }}, {{ user.id }})" class="fas fa-user-minus"></i><b style="color: #262424; margin-left: 5px"> {{ username}}</b></div>
                           </div>
                       {% endfor %}
 
@@ -205,7 +205,7 @@
                   </div>
                   <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button onclick="shareWith({{ not_shared_users }})" type="button" class="btn btn-dark">Share</button>
+                        <button onclick="shareWith({{ not_shared_users }}, {{ col.id }}, {{ user.id }})" data-bs-dismiss="modal" type="button" class="btn btn-dark">Share</button>
                   </div>
               </form>
               <form id="unshareForm" action="{% url 'shared_photo_library:collection_detail' id=col.id %}" method="post" enctype="multipart/form-data">
@@ -329,7 +329,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Close</button>
-            <button onclick="addPhotos({{ col.id }}, {{ user.id }})" type="button" class="btn btn-dark btn-lg">Save changes</button>
+            <button onclick="addPhotos({{ col.id }}, {{ user.id }})" data-bs-dismiss="modal" type="button" class="btn btn-dark btn-lg">Save changes</button>
           </div>
 
         </div>
@@ -442,10 +442,104 @@ function editTags(){
 }
 
 function addPhotos(col_id, user_id){
-    document.getElementById("col_id").value = col_id
-    document.getElementById('addPhotosForm').submit();
+    let selected = document.getElementById("selected-photos").value;
+    selected = selected.split(",");
+    console.log(selected);
+    if(selected.length>2){
+        document.getElementById("col_id").value = col_id
+        document.getElementById('addPhotosForm').submit();
+    }
+    else{
+        const url = "/shared-photo-library/collection/"+col_id;
+        console.log(url);
 
-    socket.send(JSON.stringify({'change': 'col', 'id': col_id, 'change_by': user_id, 'type': 'add'}))
+        const csrfToken = getCookie('CSRF-TOKEN');
+        const data = {
+            ph_id: selected[1],
+            add: true
+        }
+        fetch(url, {
+          method: 'POST', // or 'PUT'
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            socket.send(JSON.stringify({'change': 'col', 'id': col_id, 'change_by': user_id, 'type': 'add', 'meta_data': data}))
+
+            var col_item= document.createElement("div");
+                col_item.className = "grid-item";
+                var fig = document.createElement("figure");
+                fig.className = "effect-bubba";
+                var img = document.createElement("img");
+                img.id = "img-"+data['id']
+                img.src = data['url']
+                img.style = "height:300px; width:300px";
+                img.className = "img-fluid tm-img cover";
+                img.style = "height:300px; width:300px;"
+                var figcapt = document.createElement("figcaption");
+                var p = document.createElement("p");
+                p.className = 'tm-figure-description';
+                p.textContent = "Location: "+ data['location']
+                figcapt.append(p);
+
+                var p = document.createElement("p");
+                p.className = 'tm-figure-description';
+                p.textContent = "Date: "+ data['date']
+                figcapt.append(p);
+
+                var p = document.createElement("p");
+                p.className = 'tm-figure-description';
+                p.textContent = "Tags: "+ data['tags']
+                figcapt.append(p);
+                fig.append(img);
+                fig.append(figcapt);
+
+                let r = document.createElement('div');
+                r.className = "row text-md-center";
+                r.style = "width: 100px; margin-left: 100px";
+
+                let c = document.createElement('div');
+                c.className = "col";
+
+                let b = document.createElement("button");
+                b.style = style="border: none; display: inline-block; background: transparent";
+                let i = document.createElement("i");
+                i.className = "fas fa-edit";
+                console.log(i);
+                b.append(i)
+                c.append(b);
+                r.append(c)
+                c = document.createElement('div');
+                c.className = "col";
+
+                b = document.createElement("button");
+                b.style = style="border: none; display: inline-block; background: transparent";
+                i = document.createElement("i");
+                i.className = "fas fa-folder-minus";
+                console.log(i);
+                b.append(i)
+                console.log(b)
+                c.append(b);
+                r.append(c);
+
+                col_item.append(fig);
+                col_item.append(r);
+
+                document.getElementById('photos-grid').append(col_item);
+
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+
+
+    }
+
+
 
 }
 
@@ -506,26 +600,89 @@ function removeSelectedPhotos(){
     document.getElementById('removeSelectedPhotos').submit();
 }
 
-function unshareWith(user_id){
+function unshareWith(user_id, col_id, change_by){
     {#console.log(user_id)#}
     let unshare = document.getElementById('unshareWith');
     unshare.value = user_id;
-    document.getElementById('unshareForm').submit();
+    const url = "/shared-photo-library/collection/"+col_id;
+        console.log(url);
+
+        const csrfToken = getCookie('CSRF-TOKEN');
+        const data = {
+            unshare_with: user_id,
+            unshare: true,
+        }
+        fetch(url, {
+          method: 'POST', // or 'PUT'
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("sorun yok");
+
+            socket.send(JSON.stringify({'change': 'col', 'id': col_id, 'type': 'unshare', 'change_by': change_by}));
+            document.getElementById("shared-"+user_id).remove();
+            {#console.log(el.parentNode.parentNode)#}
+
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+
+
+    {#document.getElementById('unshareForm').submit();#}
 }
 
-function shareWith(not_shared_users){
-    console.log(not_shared_users)
+function shareWith(not_shared_users, col_id, user_id){
     let share = document.getElementById('username')
     let username = share.value
-    const index = not_shared_users.indexOf(username);
-    if (index > -1) {
-        document.getElementById('shareForm').submit();
+
+    const url = "/shared-photo-library/collection/"+col_id;
+    console.log(url);
+
+    const csrfToken = getCookie('CSRF-TOKEN');
+    const data = {
+        share_with: username,
+        share: true
     }
-    else{
-        let warning = document.getElementById("userWarning")
-        warning.innerHTML = "No users found."
-        warning.style.display = "block"
-    }
+    fetch(url, {
+      method: 'POST', // or 'PUT'
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        socket.send(JSON.stringify({'change': 'col', 'id': col_id, 'change_by': user_id, 'type': 'share', 'shared_with': username}));
+        var col = document.createElement("div");
+        col.className = "col-md-3";
+        var d = document.createElement("div");
+        d.className = "p-1 border" ;
+        d.style = "background-color: #cbc7c7";
+        var i = document.createElement('i');
+        i.className = "fas fa-user-minus";
+        i.onclick = unshareWith(user_id, col_id, user_id);
+        var b = document.createElement('b');
+        b.style="color: #262424; margin-left: 5px";
+        b.innerText = username;
+        i.append(b);
+        d.append(i);
+        col.append(d);
+        document.getElementById("shared-users-grid").append(col);
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+
+
+        {#document.getElementById('shareForm').submit();#}
+
 
 }
 
@@ -675,17 +832,147 @@ shareModal.addEventListener('hidden.bs.modal', function (event) {
 
 </script>
 
+<script>
+
+    var socket = new WebSocket('ws://' + window.location.host + '/notification/');
+    console.log(socket)
+
+        socket.onopen = function open() {
+          console.log('WebSockets connection created.');
+          {#socket.close();#}
+        };
+
+        socket.onmessage = function(e) {
+            const data = e.data
+            const csrfToken = getCookie('CSRF-TOKEN');
+            const url = "{% url 'shared_photo_library:notifications' %}";
+            fetch(url, {
+              method: 'POST', // or 'PUT'
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+              },
+              body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data['change']){
+                    if(data['type'] === "remove"){
+                        let ph_id = data['ph_id']
+                        let img = document.getElementById("img-"+ph_id);
+                        img.parentNode.parentNode.remove();
+
+                    }
+                    else if (data['type']==="add"){
+                        var col_item= document.createElement("div");
+                        col_item.className = "grid-item";
+                        var fig = document.createElement("figure");
+                        fig.className = "effect-bubba";
+                        var img = document.createElement("img");
+                        img.id = "img-"+data['id']
+                        img.src = data['url']
+                        img.style = "height:300px; width:300px";
+                        img.className = "img-fluid tm-img cover";
+                        img.style = "height:300px; width:300px;"
+                        var figcapt = document.createElement("figcaption");
+                        var p = document.createElement("p");
+                        p.className = 'tm-figure-description';
+                        p.textContent = "Location: "+ data['location']
+                        figcapt.append(p);
+
+                        var p = document.createElement("p");
+                        p.className = 'tm-figure-description';
+                        p.textContent = "Date: "+ data['date']
+                        figcapt.append(p);
+
+                        var p = document.createElement("p");
+                        p.className = 'tm-figure-description';
+                        p.textContent = "Tags: "+ data['tags']
+                        figcapt.append(p);
+                        fig.append(img);
+                        fig.append(figcapt);
+
+                        let r = document.createElement('div');
+                        r.className = "row text-md-center";
+                        r.style = "width: 100px; margin-left: 100px";
+
+                        let c = document.createElement('div');
+                        c.className = "col";
+
+                        let b = document.createElement("button");
+                        b.style = style="border: none; display: inline-block; background: transparent";
+                        let i = document.createElement("i");
+                        i.className = "fas fa-edit";
+                        console.log(i);
+                        b.append(i)
+                        c.append(b);
+                        r.append(c)
+                        c = document.createElement('div');
+                        c.className = "col";
+
+                        b = document.createElement("button");
+                        b.style = style="border: none; display: inline-block; background: transparent";
+                        i = document.createElement("i");
+                        i.className = "fas fa-folder-minus";
+                        console.log(i);
+                        b.append(i)
+                        console.log(b)
+                        c.append(b);
+                        r.append(c);
+
+                        col_item.append(fig);
+                        col_item.append(r);
+
+                        document.getElementById('photos-grid').append(col_item);
+                    }
+
+
+
+                    var notification = document.createElement('div');
+                    notification.className = "alert alert-info";
+                    notification.role = "alert";
+                    notification.innerText = data['notification'];
+
+                    document.getElementById("notifications").append(notification);
+
+                    var not = document.getElementById("notification");
+                    var notNo = document.getElementById("notificationNumber");
+                    not.style.color = "red";
+
+                    if(notNo.innerText ===""){
+                        notNo.innerText = "1";
+                    }
+                    else{
+                        notNo.innerText = (parseInt(notNo.innerText)+1).toString();
+                    }
+
+                }
+                else{
+
+                }
+              console.log('heyyyoo notifications oldu mu:', data);
+
+            })
+            .catch((error) => {
+              console.error('Error:', error);
+            });
+
+
+            console.log(data)
+            console.log("loloooooooooooooooooooooooo");
+
+        };
+        socket.onclose = function(e) {
+            console.log('Notification socket closed');
+        };
+
+</script>
+
 
 {% endblock %}
 
 
-<script>
 
-        socket.onmessage = function(e) {
-            console.log("HEYYOOO im here")
-        };
-
-    </script>
 
 
 

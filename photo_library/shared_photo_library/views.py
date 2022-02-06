@@ -217,6 +217,16 @@ class CollectionDetail(LoginRequiredMixin, View):
             for view in views_attached_to_col:
                 view.filter_by_view()
             return JsonResponse({})
+        elif data.get('add'):  # ajax request made to add a photo to collection
+            photo_id = int(data.get('ph_id'))
+            photo = Photo.objects.get(id=photo_id)
+            col.add_photo_to_collection(photo)
+
+            views_attached_to_col = FilterView.objects.filter(collection=col)
+            for view in views_attached_to_col:
+                view.filter_by_view()
+            return JsonResponse({'url': photo.photo.url, 'id': photo.id, 'location': photo.location,
+                                 'date': str(photo.date), 'tags': photo.tags})
         elif data.get('selected-photos'):
             selected_photos_ids = data['selected-photos'].split(',')[1:]
             col.add_photos_to_collection(selected_photos_ids)
@@ -232,15 +242,17 @@ class CollectionDetail(LoginRequiredMixin, View):
             for view in views_attached_to_col:
                 view.filter_by_view()
 
-        elif data.get('unshare-with'):
-            u_id = int(data.get('unshare-with'))
+        elif data.get('unshare_with'):
+            u_id = int(data.get('unshare_with'))
             user = User.objects.get(id=u_id)
             col.unshare_with(user)
+            return JsonResponse({})
 
-        elif data.get('share-with'):
-            username = data.get('share-with')
+        elif data.get('share_with'):
+            username = data.get('share_with')
             user = User.objects.get(username=username)
             col.share_with(user)
+            return JsonResponse({})
 
         return redirect('shared_photo_library:collection_detail', id=col_id)
 
@@ -333,22 +345,42 @@ class GetNotifications(LoginRequiredMixin, View):
         print(request.user)
         data = json.load(request)
         data = json.loads(data)
+        print("heyyyoo data: ", data)
         if data['change'] == "col":
             col_id = int(data['id'])
             col = Collection.objects.get(id=col_id)
+            if data['type'] == "unshare":
+                col_id = int(data['id'])
+                col = Collection.objects.get(id=col_id)
+                notification = f"Collection {col.collection_name} unshared with you."
+                return JsonResponse({'change': True, 'notification': notification, 'type': data['type'],
+                                     'id': col.id})
             if request.user in col.shared_users.all() or request.user == col.owner:
                 if request.user.id != int(data['change_by']):
                     if data['type'] == "remove":
                         notification = f"{User.objects.get(id=int(data['change_by'])).username} removed a photo from the collection {col.collection_name}"
                         return JsonResponse({'change': True, 'notification': notification, 'ph_id': data['ph_id'], 'type': data['type']})
                     elif data['type'] == "add":
-                        notification = f"{User.objects.get(id=int(data['change_by'])).username} added photos to the collection {col.collection_name}"
-                    return JsonResponse({'notification': notification})
+                        print("add here")
+                        notification = f"{User.objects.get(id=int(data['change_by'])).username} added a photo to the collection {col.collection_name}"
+                        res = {**{'change': True, 'notification': notification, 'type': data['type']}, **data['meta_data']}
+                        print("res here: ", res)
+                        return JsonResponse(res)
+                    elif data['type'] == "share":
+                        print(data)
+                        col_id = int(data['id'])
+                        col = Collection.objects.get(id=col_id)
+                        notification = f"{User.objects.get(id=int(data['change_by'])).username} shared the collection {col.collection_name} with {data['shared_with']}"
+                        return JsonResponse({'change': True, 'notification': notification, 'type': data['type'],
+                                             'collection_name': col.collection_name, 'date': str(col.created_date),
+                                             'created_by': col.owner.username, 'url': col.cover.url, 'id': col.id})
+
+
 
         else:  # there are changes in the view
             pass
 
-        return JsonResponse({'notification': ""})
+        return JsonResponse({'change': False, 'notification': ""})
 
 
 
